@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger — Markets Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#123331;
+    --ink-2:#1c4744;
+    --paper:#efe8d8;
+    --paper-2:#e6ddc8;
+    --paper-line:#d8cbaa;
+    --text:#20241f;
+    --text-dim:#5a6058;
+    --ochre:#b8811f;
+    --ochre-deep:#8f640f;
+    --brick:#a3392a;
+    --cream:#f8f5ec;
+    --fallback-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    --fallback-serif: Georgia, "Times New Roman", serif;
+    --fallback-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --cream-fixed:#f8f5ec; /* always-light text/dots for the always-dark ink header & date picker — must NOT shift in dark mode */
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#16241f; --paper-2:#1c2c26; --paper-line:#2c3b33;
+      --text:#eee7d6; --text-dim:#9fa89c; --cream:#1c2c26;
+      --ink:#0d1a17; --ink-2:#12241f;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#16241f; --paper-2:#1c2c26; --paper-line:#2c3b33;
+    --text:#eee7d6; --text-dim:#9fa89c; --cream:#1c2c26;
+    --ink:#0d1a17; --ink-2:#12241f;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--ink);
+    background-image: linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 100%);
+    font-family: 'IBM Plex Sans', var(--fallback-sans);
+    color:var(--text);
+    overscroll-behavior:none;
+  }
+  body{
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+
+  .app{
+    height:100%;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:14px 8px 10px;
+  }
+  @media (min-width:480px){
+    .app{ padding:18px 14px 12px; }
+  }
+
+  .topbar{
+    width:100%;
+    max-width:480px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:10px;
+    padding:2px 4px 12px;
+    color:var(--cream-fixed);
+  }
+  .brand{
+    font-family:'Source Serif 4', var(--fallback-serif);
+    font-weight:700;
+    font-size:20px;
+    letter-spacing:0.2px;
+    color:var(--cream-fixed);
+    flex-shrink:0;
+  }
+  .brand span{ color: var(--ochre); }
+  .topbar-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-shrink:0;
+  }
+  .meta{
+    font-family:'IBM Plex Mono', var(--fallback-mono);
+    font-size:11px;
+    color:#c9c2ac;
+    text-align:right;
+    line-height:1.5;
+    min-width:0;
+  }
+  .fsbtn{
+    flex-shrink:0;
+    width:28px;
+    height:28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid #3c4d45;
+    border-radius:7px;
+    background:var(--ink-2);
+    color:var(--cream-fixed);
+    cursor:pointer;
+    padding:0;
+    transition: border-color .15s, background .15s;
+  }
+  .fsbtn:hover, .fsbtn:focus{ border-color:var(--ochre); }
+  .fsbtn svg{ width:14px; height:14px; }
+
+  .datepicker{
+    width:100%;
+    max-width:480px;
+    display:flex;
+    gap:6px;
+    padding:0 4px 12px;
+  }
+  .dateselect{
+    flex:1 1 0;
+    min-width:0;
+    font-family:'IBM Plex Mono', var(--fallback-mono);
+    font-size:12px;
+    font-weight:500;
+    color:var(--cream-fixed);
+    background:var(--ink-2);
+    border:1px solid #3c4d45;
+    border-radius:8px;
+    padding:7px 6px;
+    text-align:center;
+    text-align-last:center;
+    cursor:pointer;
+    -webkit-appearance:none;
+    appearance:none;
+    transition: border-color .15s;
+  }
+  .dateselect:hover, .dateselect:focus{ border-color:var(--ochre); }
+  .dateselect option{ background:var(--ink-2); color:var(--cream-fixed); }
+
+  .stage{
+    position:relative;
+    width:100%;
+    max-width:480px;
+    flex:1;
+    display:flex;
+    align-items:stretch;
+    min-height:0;
+  }
+
+  .navzone{
+    flex:0 0 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  @media (min-width:480px){
+    .navzone{ flex-basis:28px; }
+    .navzone svg{ width:16px; height:16px; }
+  }
+  .navzone svg{ width:14px; height:14px; opacity:0.55; transition:opacity .15s; }
+  .navzone:hover svg{ opacity:0.95; }
+  .navzone.disabled{ pointer-events:none; opacity:0.15; }
+
+  .cardwrap{
+    flex:1;
+    min-width:0;
+    position:relative;
+    overflow:hidden;
+    border-radius:18px;
+  }
+
+  /* .card only ever handles the left-right slide animation — it never
+     scrolls itself, so animating its transform never fights a scroll
+     gesture. .cardscroll is the one and only element that scrolls, and
+     it never has a transition/transform on it, so scrolling stays smooth. */
+  .card{
+    position:absolute;
+    inset:0;
+    border-radius:18px;
+    overflow:hidden;
+    will-change:transform, opacity;
+    pointer-events:none;
+    transition: transform .38s cubic-bezier(.22,.68,0,1), opacity .3s ease;
+  }
+  .card.active{ pointer-events:auto; }
+  .card.enter-right{ transform:translateX(24px); opacity:0; }
+  .card.enter-left{ transform:translateX(-24px); opacity:0; }
+  .card.active{ transform:translateX(0); opacity:1; }
+  .card.leave-left{ transform:translateX(-24px); opacity:0; }
+  .card.leave-right{ transform:translateX(24px); opacity:0; }
+
+  .cardscroll{
+    height:100%;
+    width:100%;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    border-radius:18px;
+  }
+
+  .cardinner{
+    padding:18px 16px 22px;
+    display:flex;
+    flex-direction:column;
+    min-height:100%;
+    min-width:0;
+    overflow-wrap:break-word;
+    word-break:break-word;
+  }
+  @media (min-width:480px){
+    .cardinner{ padding:22px 22px 26px; }
+  }
+
+  .tag{
+    display:inline-block;
+    align-self:flex-start;
+    font-family:'IBM Plex Mono', var(--fallback-mono);
+    font-size:11px;
+    letter-spacing:0.06em;
+    font-weight:600;
+    color:var(--ochre-deep);
+    background:transparent;
+    border:1px solid var(--ochre-deep);
+    border-radius:100px;
+    padding:4px 10px 3px;
+    margin-bottom:14px;
+    flex-shrink:0;
+    max-width:100%;
+    overflow-wrap:break-word;
+  }
+
+  h1{
+    font-family:'Source Serif 4', var(--fallback-serif);
+    font-weight:700;
+    font-size:clamp(20px, 5.8vw, 26px);
+    line-height:1.22;
+    margin:0 0 14px;
+    color:var(--text);
+    flex-shrink:0;
+    overflow-wrap:break-word;
+  }
+
+  .dek p{
+    font-size:15.5px;
+    line-height:1.66;
+    color:var(--text);
+    margin:0 0 14px;
+    overflow-wrap:break-word;
+  }
+  .dek p:last-child{ margin-bottom:0; }
+  .dek b{ font-weight:600; color:var(--text); }
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:10px;
+    margin-top:18px;
+    flex-shrink:0;
+  }
+  .stat{
+    background:var(--cream);
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    padding:10px 12px;
+    min-width:0;
+  }
+  .stat .v{
+    font-family:'IBM Plex Mono', var(--fallback-mono);
+    font-weight:600;
+    font-size:15.5px;
+    color:var(--text);
+    display:flex;
+    align-items:baseline;
+    gap:5px;
+    flex-wrap:wrap;
+    overflow-wrap:break-word;
+    word-break:break-word;
+  }
+  .stat .v.up{ color:#2c6e49; }
+  .stat .v.down{ color:var(--brick); }
+  .stat .l{
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:3px;
+    line-height:1.3;
+    overflow-wrap:break-word;
+  }
+
+  .source{
+    font-family:'IBM Plex Mono', var(--fallback-mono);
+    font-size:10.5px;
+    color:var(--text-dim);
+    margin-top:16px;
+    padding-top:10px;
+    border-top:1px dashed var(--paper-line);
+    flex-shrink:0;
+  }
+
+  .scrollcue{
+    position:sticky;
+    bottom:0;
+    left:0;
+    right:0;
+    height:28px;
+    margin-top:-28px;
+    background:linear-gradient(180deg, rgba(239,232,216,0) 0%, var(--paper) 78%);
+    pointer-events:none;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-bottom:5px;
+  }
+  .scrollcue svg{ width:14px; height:14px; opacity:0.4; color:var(--text-dim); }
+  .cardscroll.at-bottom .scrollcue{ display:none; }
+
+  .progressrow{
+    width:100%;
+    max-width:480px;
+    display:flex;
+    justify-content:center;
+    gap:5px;
+    padding:14px 4px 4px;
+    flex-wrap:wrap;
+  }
+  .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:#3c4d45;
+    cursor:pointer;
+    transition: background .2s, transform .2s;
+  }
+  .dot.done{ background:var(--ochre); }
+  .dot.now{ background:var(--cream-fixed); transform:scale(1.4); }
+
+  .hint{
+    text-align:center;
+    font-family:'IBM Plex Mono', var(--fallback-mono);
+    font-size:10.5px;
+    color:#7d8a80;
+    padding-top:10px;
+    letter-spacing:0.02em;
+  }
+
+  :focus-visible{ outline:2px solid var(--ochre); outline-offset:2px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">Ledger<span>.</span></div>
+    <div class="topbar-right">
+      <div class="meta" id="metaTop">— · —</div>
+      <button class="fsbtn" id="fsBtn" type="button" aria-label="Enter fullscreen" title="Fullscreen">
+        <svg id="fsIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="8 3 3 3 3 8"></polyline>
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <polyline points="3 16 3 21 8 21"></polyline>
+          <polyline points="21 16 21 21 16 21"></polyline>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="datepicker" id="datePicker">
+    <select class="dateselect" id="yearSelect" aria-label="Year"></select>
+    <select class="dateselect" id="monthSelect" aria-label="Month"></select>
+    <select class="dateselect" id="daySelect" aria-label="Day"></select>
+  </div>
+
+  <div class="stage">
+    <div class="navzone" id="prevZone" aria-label="Previous story" role="button" tabindex="0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </div>
+    <div class="cardwrap" id="cardwrap"></div>
+    <div class="navzone" id="nextZone" aria-label="Next story" role="button" tabindex="0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </div>
+  </div>
+
+  <div class="progressrow" id="progressRow"></div>
+  <div class="hint">scroll a card to read in full · swipe or tap the edges for the next story</div>
+</div>
+
+<script>
+/* ============================================================
+   LEDGER — data layer
+   Every new newspaper upload adds ONE new entry to NEWS_BY_DATE
+   below, keyed "YYYY-MM-DD", containing that day's simplified
+   finance stories in the same {tag, headline, body, stats,
+   source} shape used here. Never edit or remove a past date's
+   entry — just add the next one. The date-chip row at the top
+   of the page is generated automatically from these keys, and
+   selecting a date shows only that day's stories.
+   ============================================================ */
+const NEWS_BY_DATE = {
+  "2026-09-24": {
+    label: "24 Sep 2026",
+    stories: [
+  {
+    tag: "IPO",
+    headline: "After a decade of delays, India's own stock exchange finally listed itself today",
+    body: [
+      "There's something a little strange about a stock exchange selling shares of itself on that very exchange. Today it happened: the National Stock Exchange (NSE) — the venue where most Indian share trading actually takes place — became a publicly listed company, ten years after it first tried.",
+      "The journey was rocky. NSE first filed to go public back in 2016, but a scandal over unfair high-speed trading access (the 'co-location case') got it penalized and barred from raising funds for six months. It took until this September for regulators to finally clear the way, and even then the ₹22,569 crore share sale — India's second-biggest ever, after Hyundai Motor India's ₹27,859 crore listing in 2024 — landed with more of a shrug than a bang.",
+      "Big institutional investors like banks, mutual funds and insurers were enthusiastic, bidding for nearly 12.7 times the shares set aside for them. But the unofficial 'grey market premium' — essentially a betting-market guess at how much the stock will pop on debut — collapsed from 21% at the start of bidding to just 2% by the end, as investors grew wary of the price NSE was asking. Analysts now expect the stock to list at only a modest 4-5% premium.",
+      "One reason retail investors stayed cautious: every single share on offer belonged to existing shareholders cashing out. NSE itself isn't raising any fresh money from this listing, so there's no new capital going into growing the exchange — often a reassuring signal for first-time buyers that a company is investing in its own future."
+    ],
+    stats: [
+      {v:"₹22,569cr", l:"Size of NSE's IPO — India's 2nd-largest ever"},
+      {v:"12.7x", up:true, l:"Demand from big institutional investors"},
+      {v:"21%→2%", down:true, l:"Grey-market premium, start to end of bidding"},
+      {v:"₹10,302cr", l:"NSE's net profit in FY26"}
+    ],
+    source: "Mint · Front Page"
+  },
+  {
+    tag: "Markets",
+    headline: "India still tops the emerging-market league table — but the gap is narrowing",
+    body: [
+      "Every month, Mint runs a scorecard comparing India against 11 other big emerging economies — Vietnam, China, Brazil and others — on seven measures like GDP growth, inflation and how the stock market is doing. For August, India held on to first place, just ahead of Vietnam and Malaysia.",
+      "The strong points were familiar: the economy grew 7.8% in the April-June quarter, comfortably beating expectations even with a war in West Asia rattling oil markets, and exports surged 26% year-on-year, among the fastest of any country tracked. The RBI's special deposit scheme for non-resident Indians also helped fatten the country's foreign-currency reserves, pushing 'import cover' — essentially, how many months of imports the country could pay for using its reserves alone — up to 10.8 months.",
+      "But India lagged on the metrics that matter most to ordinary savers and investors. Retail inflation, at 4.8%, sits 80 basis points above the RBI's own 4% target, worse than peers like Malaysia and Mexico. And while Indian stocks did better than in recent months, the market's value grew just 2.7% in August — slower than Indonesia, South Africa and China, which each posted gains of 2.9-3.3%.",
+      "The bigger worry is what comes next. A weak monsoon, an expected string of RBI interest-rate hikes, and rising bond yields in the US are all pressures building at once — several of which showed up clearly in the days right after this scorecard was compiled."
+    ],
+    stats: [
+      {v:"72.9", up:true, l:"India's composite score — still No. 1"},
+      {v:"7.8%", up:true, l:"GDP growth, April-June quarter"},
+      {v:"4.8%", down:true, l:"Retail inflation — above RBI's 4% target"},
+      {v:"2.7%", l:"India's stock-market growth in August (peers: up to 3.3%)"}
+    ],
+    source: "Mint · Plain Facts"
+  },
+  {
+    tag: "Markets",
+    headline: "Foreign investors keep pulling money out of Indian stocks — and now bonds are feeling it too",
+    body: [
+      "Foreign investors sold another ₹19,828 crore worth of Indian shares between 1 and 23 September, extending a selling streak that has now stretched across two months. It's the kind of steady outflow that tends to chip away at the market quietly rather than causing a single dramatic crash.",
+      "Part of the story is happening in the bond market. When you buy a government bond, the 'yield' is roughly the interest rate you're locking in — and right now, yields are climbing on both sides of the world. The US Federal Reserve raised interest rates by 25 basis points this month, pushing its benchmark 10-year yield toward 5%. India's own 10-year yield, at around 7%, is still higher, but the gap between the two has shrunk from about 2.5 percentage points back in February to roughly 2 points now — meaning Indian bonds look less uniquely rewarding to a foreign investor than they used to.",
+      "Layered on top of that is a stubborn inflation problem. This year's kharif (monsoon-season) crop sowing is running 1.5% behind last year, with rainfall about 23% below normal — a shortfall that could push food prices higher just as the India crude oil basket has jumped to $114.8 a barrel in September from $90 in August, thanks to the war in West Asia.",
+      "Put together, economists now expect the RBI to start raising interest rates as early as next month, with cumulative hikes of around 100 basis points possible by next year — a reversal after a long stretch of rate cuts, and one that would mark a real shift in how expensive it is to borrow money in India."
+    ],
+    stats: [
+      {v:"₹19,828cr", down:true, l:"Foreign investors' net stock sell-off, 1-23 Sept"},
+      {v:"~7%", up:true, l:"India's 10-year government bond yield"},
+      {v:"~5%", up:true, l:"US 10-year Treasury yield, after the Fed's latest hike"},
+      {v:"$114.8", up:true, l:"India's crude oil basket price per barrel (from $90)"}
+    ],
+    source: "Mint · Plain Facts"
+  },
+  {
+    tag: "Macro",
+    headline: "Five different global agencies just raised their bets on India's economy — all in the same fortnight",
+    body: [
+      "It's rare for global forecasters to move in near-lockstep, but that's what's happened with India this month. Fitch Ratings raised its growth forecast for the 2026-27 financial year to 6.9%, from 6.4%. S&P Global Ratings went further, lifting its call to 7% from 6.6%. Moody's had already bumped its own forecast up to 7% the week before.",
+      "Two more joined in on Wednesday: the OECD (a club of mostly wealthy economies that tracks the global outlook) raised its India forecast to 7.1% from 6.3%, while the Asian Development Bank moved to 7% from 6.6%. That makes it a clean sweep of five major agencies revising India upward within a couple of weeks — an unusually strong show of confidence given the backdrop of an oil-price shock from the West Asia war.",
+      "The reasoning is fairly consistent across the reports: resilient domestic consumption, a pickup in private investment, and steady government infrastructure spending are all offsetting the drag from costlier oil and lingering uncertainty over US tariffs. The OECD specifically flagged AI-related investment and improving farm productivity as tailwinds worth watching.",
+      "None of the agencies are pretending it's smooth sailing ahead, though. Most expect growth to cool in the second half of the financial year as the tailwinds from this year's tax cuts and GST changes fade, with the OECD projecting a slowdown to 6.5% by FY28. For now, though, India remains everyone's pick for the world's fastest-growing major economy."
+    ],
+    stats: [
+      {v:"7.1%", up:true, l:"OECD's new FY27 growth forecast (from 6.3%)"},
+      {v:"7.0%", up:true, l:"S&P's & ADB's new forecast (from 6.6%)"},
+      {v:"6.9%", up:true, l:"Fitch's new forecast (from 6.4%)"},
+      {v:"6.5%", down:true, l:"OECD's projected FY28 slowdown"}
+    ],
+    source: "Mint · Economy & Policy"
+  },
+  {
+    tag: "Macro",
+    headline: "India's factories and services just had their best month in a while",
+    body: [
+      "A widely watched monthly health-check on the Indian economy just posted its strongest reading in three months. The HSBC Flash India Composite PMI — a survey-based index tracking whether business activity across manufacturing and services is expanding or shrinking — rose to 56.5 in September from 54.3 in August. Any reading above 50 signals growth, so this is a fairly emphatic 'yes, business is picking up.'",
+      "Manufacturing alone hit 55.7, a seven-month high, while services activity edged up to 55.8. Companies surveyed pointed to strengthening demand as the main driver, with new orders for properties, transport services and travel bookings all cited as bright spots — even as growth in export orders slowed a touch, likely reflecting the drag from US tariffs and global uncertainty.",
+      "This kind of survey data matters because it's one of the earliest signals of how the economy is really doing, arriving weeks before official GDP figures. Business confidence about the year ahead also strengthened to a four-month high, suggesting companies expect this momentum to continue rather than fade — a reassuring sign given the inflationary pressures building elsewhere in the economy this month."
+    ],
+    stats: [
+      {v:"56.5", up:true, l:"Composite PMI — 3-month high (from 54.3)"},
+      {v:"55.7", up:true, l:"Manufacturing PMI — 7-month high"},
+      {v:"55.8", up:true, l:"Services PMI Business Activity Index"},
+      {v:">50", l:"Any reading above this means growth, not contraction"}
+    ],
+    source: "Mint · Economy & Policy"
+  },
+  {
+    tag: "Deals",
+    headline: "A Canadian investor just doubled its money exiting an Indian solar company — while the company used the cash to pay off debt",
+    body: [
+      "Avaada Ventures, a clean-energy group, has repaid roughly ₹6,713 crore of debt it owed to Brookfield Renewable — and in doing so, handed the Canadian investment giant a clean exit worth almost exactly double what it had put in.",
+      "Brookfield had originally invested ₹3,290 crore in Avaada through convertible debentures (a kind of loan that can later be converted into equity) back in 2023, as part of a broader commitment to invest up to $1 billion in the company. In the end, only a fraction of that full commitment — about $400 million — was actually invested. Brookfield chose not to convert its debentures into shares, taking the cash repayment instead: roughly a 2x return on its money.",
+      "The timing isn't a coincidence. This repayment comes just ahead of a ₹7,600 crore initial public offering (IPO) planned by an affiliated company, Avaada Electro Ltd, which intends to raise ₹1,600 crore in fresh capital while the promoter group sells another ₹6,000 crore worth of existing shares. Clearing the balance sheet of debt tends to make a company more attractive to IPO investors.",
+      "For Brookfield, this adds to a growing list of profitable exits from Indian renewable-energy bets, at a moment when global investors are increasingly cashing in on India's clean-energy buildout rather than just funding it."
+    ],
+    stats: [
+      {v:"₹6,713cr", up:true, l:"Amount Brookfield recovered — about 2x its investment"},
+      {v:"₹3,290cr", l:"Brookfield's original investment in Avaada"},
+      {v:"$1bn", l:"Brookfield's total committed investment ceiling (only ~$400mn used)"},
+      {v:"₹7,600cr", l:"Size of the upcoming Avaada Electro IPO"}
+    ],
+    source: "Mint · Front Page"
+  },
+  {
+    tag: "Consumer tech",
+    headline: "Everyone else's laptop sales are falling. Apple's MacBooks are having their best year yet in India",
+    body: [
+      "India's overall laptop market is shrinking this quarter — sales to consumers are down by a double-digit percentage. Apple's MacBooks are moving in the opposite direction entirely: sales jumped 89% year-on-year in the June quarter, and the company is on track to sell close to one million MacBook units in India this calendar year for the first time ever.",
+      "To put that growth in context, Apple's share of India's laptop market has climbed from under 4% at the start of 2025 to roughly 7% now — a rare case of a premium brand actually gaining ground while the broader market contracts. Independent research firm IDC projects total Indian laptop sales of 14-15 million units this year, with a further boost expected in the second half as festive-season demand kicks in.",
+      "The MacBook Neo, in particular, has been singled out as the standout performer within Apple's lineup. It reflects a broader pattern playing out globally: as memory-chip prices climb (driven up by the AI boom's hunger for chips), device makers everywhere are leaning into premium, higher-margin products rather than chasing volume in the budget segment — and Apple, already positioned at the top end, is one of the biggest beneficiaries of that shift in India."
+    ],
+    stats: [
+      {v:"+89%", up:true, l:"MacBook sales growth in India, year-on-year (Q1)"},
+      {v:"~1 million", up:true, l:"MacBook units Apple is on track to sell in India this year"},
+      {v:"~7%", up:true, l:"Apple's share of India's laptop market (from <4% in 2025)"},
+      {v:"14-15mn", l:"Total Indian laptop units expected to sell this year"}
+    ],
+    source: "Mint · Deals, Tech & Startups"
+  },
+  {
+    tag: "Insurance",
+    headline: "India's insurance regulator wants to slash the commissions agents and banks earn on your policy",
+    body: [
+      "Buy a life or general insurance policy in India today, and a meaningful chunk of your premium doesn't go toward your coverage — it goes to whoever sold it to you, as a commission. The insurance regulator, Irdai, thinks that chunk is too big, and on Wednesday proposed a sweeping rulebook to shrink it.",
+      "The technical term for this pool of money is 'Expenses of Management,' or EoM — essentially, everything an insurer spends running the business, commissions included. Under the current 2023 rules, general insurers can spend up to 30% of gross premiums on EoM, and standalone health insurers up to 35%. Irdai's new proposal would force life insurers down to 15% within two years and 12.5% within five, while general insurers would need to reach 25% within two years and 20% within five.",
+      "The numbers behind the push are stark: in FY26, private life insurers paid an average commission of 9% of total premiums collected, while private general insurers paid more than 20% — a gap Irdai clearly sees as unjustified. The proposal also bans banks and NBFCs from compulsorily bundling insurance with loans, a practice that has long been a source of customer complaints.",
+      "If this goes through, the immediate losers are insurers and the banks/agents who distribute their products, who stand to earn meaningfully less per policy sold. The intended winner is the ordinary policyholder, who Irdai hopes will end up with cheaper premiums and more genuine choice, rather than being steered toward whichever product pays the seller the biggest commission."
+    ],
+    stats: [
+      {v:"15%", down:true, l:"New EoM cap for life insurers within 2 years (from 30%)"},
+      {v:"25%", down:true, l:"New EoM cap for general insurers within 2 years (from 30%)"},
+      {v:"9%", l:"Average commission private life insurers paid in FY26"},
+      {v:">20%", down:true, l:"Average commission private general insurers paid — the target"}
+    ],
+    source: "Mint · Economy & Policy"
+  },
+  {
+    tag: "Regulation",
+    headline: "India's market regulator wants a bigger board — but not the one safeguard experts say actually matters",
+    body: [
+      "The Securities and Exchange Board of India (Sebi) — the watchdog overseeing India's stock markets — is set to get a bigger board under a new proposed law, growing from 9 members to 15, with full-time members rising from three to five. On paper, that sounds like more capacity and more oversight.",
+      "What's missing, according to legal experts, is any requirement that these new appointments go through an independent selection process. A parliamentary committee that reviewed the draft law had specifically recommended making it mandatory for appointments to follow the recommendations of an independent selection body — but that recommendation isn't binding on the government, and the final draft doesn't lock it in.",
+      "Why does this matter? A regulator's credibility rests heavily on being seen as independent from the government and the industries it oversees. Sebi's board already includes government-nominated members and one RBI representative; adding more seats without a transparent, arm's-length appointment process risks tilting the balance further toward political influence rather than technical, independent judgment — right as Sebi is being asked to do more, not less."
+    ],
+    stats: [
+      {v:"9 → 15", l:"Proposed growth in Sebi's board size"},
+      {v:"3 → 5", l:"Proposed growth in full-time board members"},
+      {v:"0", down:true, l:"Mandatory independent-selection safeguards included"}
+    ],
+    source: "Mint · Corporate"
+  },
+  {
+    tag: "Stock watch",
+    headline: "A discount shopping app's stock just had its best day since it went public — because of an ad",
+    body: [
+      "Meesho, the zero-commission online marketplace popular in smaller Indian cities, saw its stock jump nearly 10% to hit ₹240 — its highest close since debuting on 10 December, and more than double its ₹111 issue price. The catalyst wasn't a new product; it was a number in a quarterly filing.",
+      "Meesho doesn't charge sellers a commission on sales — hence the name — so almost all its profit has to come from somewhere else: advertising fees sellers pay to get their products noticed. That 'advertising contribution margin' reached 3.1% of Meesho's total transaction value (NMV) in the June quarter, and investors are betting it can roughly double from here, which management says is achievable since sellers are reportedly willing to spend 2.5 to 3 times more on ads than they currently do.",
+      "The company's overall contribution margin — revenue minus direct costs like logistics, as a share of NMV — had actually slipped from 3.3% to 2.3% over the past year as logistics costs rose, before picking back up. If advertising revenue keeps climbing while logistics costs stay controlled, Meesho's path to profitability on an adjusted basis (it was still running a loss equal to 1.2% of NMV last quarter) starts to look realistic within two to three quarters.",
+      "The risk, as with most 'free' marketplace models, is competition: Amazon and Flipkart have both built copycat zero-commission verticals (Bazaar and Shopsy) aimed squarely at the same low-value, unbranded segment Meesho has made its own."
+    ],
+    stats: [
+      {v:"+10%", up:true, l:"Meesho's one-day stock jump"},
+      {v:"₹240", up:true, l:"New closing high — vs ₹111 issue price"},
+      {v:"3.1%", l:"Advertising's share of transaction value — the key profit lever"},
+      {v:"-1.2%", down:true, l:"Adjusted Ebitda margin, still negative"}
+    ],
+    source: "Mint · Mark to Market"
+  },
+  {
+    tag: "Global tech",
+    headline: "Meta's new AI assistant became the No.1 app in America within days — and got partly blocked by Amazon within a week",
+    body: [
+      "Two weeks ago, Meta launched Muse, an easy-to-use personal AI assistant app. It shot to No.1 on Apple's US App Store almost immediately and has been downloaded more than 2.5 million times, sending Meta's stock up 11% in a single day — its best one-day move in over a year.",
+      "The backlash arrived almost as fast as the hype. Amazon blocked Muse from making purchases on its shopping site, saying it wasn't given advance notice that the AI agent would be acting on its platform. One analyst estimates Muse could add $28.5 billion in extra revenue for Meta by 2030 if it keeps this momentum — but that depends on people trusting it with sensitive access to their emails, texts and calendars, and right now, that trust is thin: only 8% of surveyed US consumers said they'd trust Meta with their passwords, versus 30% for Google.",
+      "The bigger picture is a coming wave of AI 'agents' — assistants that don't just answer questions but actually take actions on your behalf, like booking or buying things. That's exciting for companies like Meta chasing a return on their AI spending, but it also threatens the businesses whose websites these agents visit: if an AI agent does your shopping for you, fewer human eyes see the ads and product pages a site relies on to make money, which is exactly why Amazon moved to block it.",
+      "Expect this fight to spread. OpenAI is reportedly readying its own consumer AI agent within weeks, and shares of wealth managers, brokerages and even big banks dipped this week on worries that AI agents could start disrupting financial services too."
+    ],
+    stats: [
+      {v:"2.5mn+", up:true, l:"Muse downloads since its Sept 8 launch"},
+      {v:"+11%", up:true, l:"Meta's one-day stock jump on Muse's success"},
+      {v:"$28.5bn", up:true, l:"Muse's projected incremental revenue for Meta by 2030"},
+      {v:"8%", down:true, l:"Share of US consumers who'd trust Meta with their passwords"}
+    ],
+    source: "Mint · Global (WSJ)"
+  },
+  {
+    tag: "Global tech",
+    headline: "Fewer people are buying phones and laptops this year. The companies making them are earning more anyway",
+    body: [
+      "Global smartphone shipments are on track to fall 16.7% this year — the steepest annual drop ever recorded — while PC shipments are sliding too. And yet, analysts expect device revenue for Apple, Samsung, Lenovo, Dell and HP to actually climb in 2026. The explanation is simple: prices are up sharply, and manufacturers are more than making up in margin what they're losing in volume.",
+      "The root cause is memory chips, the components that store data on your phone or laptop, whose prices are being driven up by the broader AI boom's insatiable demand for chips. Memory made up about 16% of the material cost of building a PC last year; that ratio is expected to climb to 25% as memory prices stay elevated 'for the foreseeable future,' according to analysts at Gartner.",
+      "Apple's iPhone revenue is projected to grow 17% this year even as unit sales dip 1.3%, according to Wall Street estimates — helped along by price hikes on Macs and iPads this summer and a new $1,999 foldable iPhone Duo. Apple's stock is up about 26% this year as a result, and rival PC and phone makers' stocks have climbed too, with even budget Android brands like Xiaomi and Oppo raising prices on their cheapest models.",
+      "For consumers, this marks a real shift: the era of steadily cheaper, more powerful devices every year is giving way to one where you pay more, upgrade less often, and manufacturers are perfectly happy with that trade."
+    ],
+    stats: [
+      {v:"-16.7%", down:true, l:"Expected fall in global smartphone shipments — steepest ever"},
+      {v:"+17%", up:true, l:"Apple's projected iPhone revenue growth this year"},
+      {v:"25%", up:true, l:"Memory chips' expected share of PC material costs (from 16%)"},
+      {v:"$1,999", l:"Price of Apple's new foldable iPhone Duo"}
+    ],
+    source: "Mint · Global (Bloomberg)"
+  },
+  {
+    tag: "Energy",
+    headline: "State-run petrol pumps are losing ₹530 crore every single day right now",
+    body: [
+      "India's state-owned oil marketing companies — the firms behind the petrol pumps most Indians fill up at — are currently losing an estimated ₹530 crore a day on fuel sales, according to ratings agency Icra. The math is straightforward: the crude oil they buy has gotten sharply more expensive, but the price they're allowed to charge at the pump hasn't moved.",
+      "The driver is the same West Asia conflict that's been rattling markets all month: supply disruptions in the Persian Gulf have pushed crude prices up sharply in recent weeks, even as domestic retail fuel prices stay frozen — a common practice in India, where fuel-price changes are politically sensitive and companies are often expected to absorb short-term cost swings rather than pass them straight through.",
+      "This isn't a new phenomenon, but the scale is notable. Sustained losses at this pace put pressure on the state oil companies' balance sheets and, eventually, on the government, which has stepped in with compensation payments during past oil-price shocks. Whether fuel prices at the pump eventually rise to reflect the new reality of costlier crude — or the companies simply keep absorbing the hit — is the question to watch in the weeks ahead."
+    ],
+    stats: [
+      {v:"₹530cr", down:true, l:"Estimated daily loss to state oil marketing companies"},
+      {v:"$114.8", up:true, l:"India's crude oil basket price per barrel"},
+      {v:"$0", l:"Change in domestic retail fuel prices, despite the crude surge"}
+    ],
+    source: "Mint · Economy & Policy"
+  },
+  {
+    tag: "Listings",
+    headline: "Airtel's African mobile-money arm could pull off the biggest London listing in five years",
+    body: [
+      "Airtel Money, the fintech arm of Bharti Airtel's African business, has disclosed plans for what could be the largest new listing on the London Stock Exchange since global payments firm Wise debuted there at an $11 billion valuation back in July 2021.",
+      "The business itself is a quiet giant: it processed $213 billion worth of transactions in the twelve months to June 2026 across 13 sub-Saharan African countries, serving around 53 million monthly active users — a scale roughly equivalent to a tenth of the entire region's economic output, according to World Bank data. Its parent, Airtel Africa Plc, reported $1.35 billion in revenue and $373 million in profit for the last financial year.",
+      "Like several of the listings covered in this bulletin recently, this one won't raise any fresh money for the company itself — the listing is structured as an 'offer for sale,' meaning existing shareholders are simply selling their stakes to new investors, with the company itself pocketing nothing extra. Reports suggest Airtel Money is looking to raise at least $800 million at a valuation of $8-9 billion.",
+      "Management describes the business as debt-free and highly cash-generative, needing little external capital to keep growing — raising the question of why list at all. The likely answer, analysts say, is a contractual obligation to give existing minority investors a way to cash out, rather than any pressing need for the money itself."
+    ],
+    stats: [
+      {v:"$213bn", up:true, l:"Value of transactions processed in the past 12 months"},
+      {v:"53 million", l:"Monthly active users across 13 African countries"},
+      {v:"$8-9bn", up:true, l:"Valuation Airtel Money is reportedly seeking"},
+      {v:"$800mn", l:"Minimum amount it's looking to raise"}
+    ],
+    source: "Mint · Mark to Market"
+  },
+  {
+    tag: "Legal",
+    headline: "A Delhi court just ruled that foreign sanctions can't automatically override an Indian company's contracts",
+    body: [
+      "The Delhi High Court this week ordered German software giant SAP's Indian arm to restore services to Nayara Energy, an oil refiner that had its support suspended for over a year — not because of anything Nayara did wrong in India, but because the European Union had sanctioned Nayara over its Russian ownership links.",
+      "Here's the backstory: Nayara's Vadinar refinery is 49%-owned by Russia's state oil company Rosneft. When the EU sanctioned Nayara in July 2025 over that link, SAP India suspended Nayara's software support, citing an obligation to comply with EU sanctions law through its German parent company. Nayara took SAP to court, arguing that its contract with SAP India was an agreement between two Indian companies, governed by Indian law — not EU law.",
+      "The court agreed, at least for now. It found SAP's defense — that continuing services could expose its German parent to criminal liability in Germany — not convincing on the facts presented, and noted that the order in question was against SAP's Indian entity specifically, which is bound by Indian contract law regardless of what its foreign parent is required to do elsewhere. SAP can still appeal to a larger bench of the court.",
+      "This matters well beyond one refiner and one software vendor. Indian companies increasingly depend on foreign technology providers for critical infrastructure — cloud services, enterprise software, communication tools — and this case is an early signal of how Indian courts may handle the next dispute where a foreign government's sanctions collide with a purely domestic contract. It's not blanket immunity from sanctions, legal experts caution, but it does mean foreign sanctions can't simply be assumed to override Indian law without being tested in an Indian court first."
+    ],
+    stats: [
+      {v:"24 Jul 2025", l:"Date SAP first suspended Nayara's services"},
+      {v:"49%", l:"Rosneft's (Russian) ownership stake in Nayara's refinery"},
+      {v:"21 Sep 2026", l:"Date of the Delhi HC's interim order to restore services"}
+    ],
+    source: "Mint · Front Page"
+  }
+    ]
+  },
+  "2026-09-22": {
+    label: "22 Sep 2026",
+    stories: [
+  {
+    tag: "Payments",
+    headline: "UPI will no longer be free for big-ticket shopping",
+    body: [
+      "Right now, when you pay a shop using UPI — the QR-code or app-based payment system most of us use daily — it costs the shop nothing to accept your money. That is about to change, but only for bigger payments.",
+      "Starting 15 October, if you pay a shop more than ₹2,000 in a single transaction, the shop will have to pay a small fee to the bank and app behind the scenes. This fee is called an MDR, short for Merchant Discount Rate — think of it as a small cut the payment system takes for doing the work of moving your money safely. You, the customer, will not be charged anything extra. It comes entirely out of the shop's pocket.",
+      "Smaller, everyday payments are unaffected. Anything below ₹2,000, any money you send straight to another person rather than a shop, and any small vendor earning less than ₹1 lakh a month through UPI, will stay completely free — exactly as it is today.",
+      "Why bring in a fee at all? For years, UPI has cost banks and apps like PhonePe and Google Pay real money to run — servers, fraud checks, customer support — while earning them nothing. This new fee gives the system its first proper source of income, so it can keep investing in security and reliability without leaning on the government forever. The businesses that will feel it most are the ones where bills routinely cross ₹2,000, like jewellery stores and electronics retailers, because until now, they've paid nothing at all to accept UPI."
+    ],
+    stats: [
+      {v:"0.4%", l:"New fee shops will pay (MDR)"},
+      {v:"₹2,000", l:"Fee applies only above this amount"},
+      {v:"₹1 lakh/mo", l:"Small vendors stay fee-free"},
+      {v:"₹20,600cr", l:"Extra yearly revenue expected by FY28"}
+    ],
+    source: "Mint · Plain Facts"
+  },
+  {
+    tag: "Payments",
+    headline: "Two apps now run almost all of India's digital payments",
+    body: [
+      "Open your phone and there's a good chance the app you use to pay for chai or groceries is either PhonePe or Google Pay. Between the two of them, they now handle about four out of every five rupees that move through UPI in India — a level of dominance very few industries ever reach.",
+      "Paytm, once the biggest name in Indian payments, has slipped to a distant third place. Smaller apps like Navi, BHIM and WhatsApp Pay share whatever is left — under a tenth of the market combined.",
+      "This matters more than it might seem. When almost the entire country's day-to-day payment system runs through just two private companies, a technical glitch, a policy change, or even a business decision at either firm could affect hundreds of millions of people at once. That's exactly why India's payments regulator, NPCI, proposed a rule back in 2020 saying no single app should be allowed to process more than 30% of all UPI transactions. Five years later, that rule still hasn't been enforced — largely because doing so could disrupt the smooth experience millions of people currently enjoy."
+    ],
+    stats: [
+      {v:"78.3%", l:"PhonePe + Google Pay's combined share, by volume"},
+      {v:"81.8%", l:"Their combined share, by money value"},
+      {v:"8.1%", down:true, l:"Paytm's share, a distant third"},
+      {v:"30%", l:"Regulator's proposed cap — still not enforced"}
+    ],
+    source: "Mint · Plain Facts"
+  },
+  {
+    tag: "Markets",
+    headline: "Foreign investors are betting against Indian stocks like never before",
+    body: [
+      "A quiet but telling signal came out of the Indian stock market this week: foreign investors — often called FPIs, or Foreign Portfolio Investors, the big overseas funds that move money in and out of Indian shares — have taken their most pessimistic position on record.",
+      "They did this through something called 'futures contracts.' Without getting too technical, a futures contract lets an investor bet on where an index like the Nifty will be at a future date, without actually owning the underlying stocks. When an investor takes a 'short' position, they are essentially betting that prices will fall. Right now, foreign investors hold more short bets on the Nifty and Bank Nifty than ever before in India's history.",
+      "The reason isn't hard to guess: an ongoing war in West Asia has kept oil prices high, and expensive oil is bad news for a country like India that imports most of its fuel. On top of the futures bets, these same investors have also physically sold close to ₹21,000 crore worth of Indian shares this month alone, undoing two months of steady buying in July and August.",
+      "For anyone tracking the market, this is worth watching closely — not because it guarantees a crash, but because when this many large, well-informed investors turn cautious at once, it usually means they see more risk ahead than the headline index numbers are showing."
+    ],
+    stats: [
+      {v:"2,90,546", down:true, l:"Record number of bearish futures contracts"},
+      {v:"₹20,974cr", down:true, l:"Foreign investors' stock sell-off this month"},
+      {v:"₹1.14 lakh cr", down:true, l:"Total foreign outflow this financial year"},
+      {v:"-5%", down:true, l:"Nifty's fall from its early-August peak"}
+    ],
+    source: "Mint · Markets"
+  },
+  {
+    tag: "IPO",
+    headline: "NSE's long-awaited stock listing landed with a shrug, not a bang",
+    body: [
+      "The National Stock Exchange, or NSE — the very exchange where most Indian stock trades actually happen — finally listed its own shares to the public this week, after a decade of delays caused by regulatory and governance issues.",
+      "When a company sells shares to the public for the first time, it's called an IPO, or Initial Public Offering. Investors then 'bid' for shares, and the total demand compared to what's on offer is called the subscription level. NSE's ₹22,600 crore IPO, one of India's biggest ever, was subscribed 5.7 times — meaning investors asked for nearly six times more shares than were available.",
+      "That sounds impressive on its own, but by the standards of India's recent blockbuster listings, it's actually underwhelming. Some other big IPOs this past year were subscribed 27 to 54 times over. Large institutional investors — banks, mutual funds, insurance companies — drove most of the demand this time, bidding for nearly 13 times their allotted portion, while ordinary retail investors barely oversubscribed the offer.",
+      "One reason for the muted retail interest: unlike a typical IPO, NSE didn't raise any fresh money for itself. Every single share sold belonged to existing investors cashing out, which meant no new capital came into the exchange itself — something first-time investors often look for as a sign of a company's growth ambitions."
+    ],
+    stats: [
+      {v:"$2.4bn", l:"Total size of the IPO (~₹22,600cr)"},
+      {v:"5.7x", l:"Overall demand vs shares on offer"},
+      {v:"12.7x", up:true, l:"Demand from big institutional investors"},
+      {v:"1.3x", l:"Demand from ordinary retail investors"}
+    ],
+    source: "Mint · Markets"
+  },
+  {
+    tag: "Stock watch",
+    headline: "A gas utility is trading like it's the next big tech startup",
+    body: [
+      "Adani Total Gas, a company that mainly sells piped cooking gas and CNG for vehicles, saw its share price jump 13% in a single day on unusually heavy trading — the kind of move you'd expect from an exciting new-age company, not a decades-old gas distributor.",
+      "To understand why analysts are worried, it helps to know about the price-to-earnings ratio, or P/E — a simple way of asking 'how many years of current profit would it take to earn back what I paid for this share?' A P/E of 20-25 is considered normal for a stable, mature business. Adani Total Gas is trading above 100 times its earnings, meaning investors are paying a very steep price relative to how much money the company actually makes today.",
+      "To put that in perspective, the company's full-year profit was less than half of what its smaller rival, Indraprastha Gas, earned in the same period — yet Adani Total Gas is valued far higher in the stock market. The company does have real strengths, like a wider, less-crowded geographic footprint than its competitors and a strong parent group. But for now, its stock price seems to be running well ahead of what its actual earnings can justify, which is often a warning sign for investors chasing the rally."
+    ],
+    stats: [
+      {v:"₹70,000cr", l:"Company's total market value"},
+      {v:">100x", down:true, l:"Price-to-earnings ratio (very high)"},
+      {v:"₹656cr", l:"Full-year profit (FY26)"},
+      {v:"₹1,390cr", l:"Rival IGL's profit, for comparison"}
+    ],
+    source: "Mint · Mark to Market"
+  },
+  {
+    tag: "Macro",
+    headline: "The factories that power India's economy are still growing — just a little slower",
+    body: [
+      "Every month, the government tracks eight 'core' industries — things like steel, cement, electricity, coal and crude oil — because together they make up about 40% of India's broader industrial output. Think of them as the raw ingredients that feed almost every other factory in the country.",
+      "In August, output from these core industries grew 4.8% compared to a year earlier — a healthy number, but a step down from July's 5% growth. Cement and electricity did most of the heavy lifting, helped by construction activity and hot weather pushing up power demand. On the flip side, coal, crude oil and fertiliser production actually shrank during the month.",
+      "This kind of data matters because it's one of the earliest, most reliable signs of how the broader economy is doing — well before quarterly GDP numbers arrive. A steady, if slightly slower, pace of growth here suggests India's underlying economic engine is still running, even as global uncertainty around oil prices and trade tensions adds some drag."
+    ],
+    stats: [
+      {v:"4.8%", l:"Core industries' growth in August"},
+      {v:"5.0%", l:"July's growth rate, for comparison"},
+      {v:"12.5%", up:true, l:"Cement — the fastest-growing industry"},
+      {v:"-3.8%", down:true, l:"Coal output, which actually fell"}
+    ],
+    source: "Mint · Economy & Policy"
+  },
+  {
+    tag: "Fixed income",
+    headline: "Bond yields are climbing fast on both sides of the Pacific — here's why it matters to your savings",
+    body: [
+      "If you've put money into a debt mutual fund — the kind that invests in government or corporate bonds rather than stocks — you may have noticed returns getting bumpier lately. The reason traces back to something called a 'yield.'",
+      "A bond's yield is roughly the interest rate you earn on it. Bond prices and yields move in opposite directions: when yields rise, the price of existing bonds falls, because new bonds are now offering better returns and nobody wants to hold the old, lower-paying ones at the same price. The US central bank, the Federal Reserve, just raised interest rates again, pushing America's benchmark 10-year bond yield above 5% — a multi-year high. India's own 10-year government bond yield has followed suit, climbing to about 7.07%, its highest level in a good while.",
+      "For everyday investors, this creates a bit of a trade-off. Existing bond fund holdings may see their value dip in the short term as yields rise. But it also means newly issued bonds are paying more interest than before — good news if you're investing fresh money and can hold on for a while. Fund managers are currently advising caution: stick to short-duration debt funds (which are less sensitive to yield swings) unless you're comfortable riding out some volatility for the sake of potentially higher long-term returns."
+    ],
+    stats: [
+      {v:"7.07%", l:"India's 10-year government bond yield"},
+      {v:"~5.0%", l:"US 10-year Treasury yield"},
+      {v:"+25bps", l:"The US Fed's latest rate hike"},
+      {v:"6.47%", l:"Where India's yield stood a year ago"}
+    ],
+    source: "Mint · Mint Money"
+  },
+  {
+    tag: "Central bank",
+    headline: "The RBI is quietly mopping up extra cash sitting in the banking system",
+    body: [
+      "Banks in India are currently sitting on more spare cash than they need — about ₹6 lakh crore worth of what's called 'liquidity surplus.' Too much idle money floating around the system can push interest rates down further than the RBI wants and even stoke inflation, so the central bank periodically steps in to soak some of it up.",
+      "The tool it uses is called an Open Market Operation, or OMO. In simple terms, the RBI sells government bonds to banks and investors — in exchange, those banks hand over cash to the RBI, which pulls that money out of everyday circulation. This week's sale was worth ₹25,000 crore, the second of three planned rounds that will together remove ₹1 lakh crore from the system by the end of the month.",
+      "This is routine central-bank housekeeping rather than a dramatic policy shift, but it's still worth knowing about: it shows the RBI actively managing the amount of money flowing through India's banks, which in turn affects everything from loan interest rates to how easily businesses can borrow."
+    ],
+    stats: [
+      {v:"₹25,000cr", l:"Bonds sold in this round"},
+      {v:"₹1,00,000cr", l:"Total planned across all three rounds"},
+      {v:"₹6.05 lakh cr", l:"Spare cash sitting in the banking system"},
+      {v:"28 Sep", l:"Date of the final, third round"}
+    ],
+    source: "Mint · News Wrap"
+  },
+  {
+    tag: "Global trade",
+    headline: "China's Xi meets America's Trump this week — but Xi has little reason to give ground",
+    body: [
+      "Four months ago, when China's president Xi Jinping and US president Donald Trump last met, the two economies were on roughly equal footing in terms of negotiating leverage. That balance has shifted noticeably since then, and it's shaping expectations for their meeting in Washington this week.",
+      "China's trade with the rest of the world has kept growing strongly, even as America pushed for tariffs to shrink the trade gap between the two countries. Meanwhile, President Trump's approval ratings at home have slipped, partly due to a costly and unpopular war involving Iran. In simple terms: China now has less pressure to make concessions, while America has more reasons to want a calm, stable relationship with its biggest trading partner.",
+      "The central question analysts are watching isn't whether some dramatic new trade deal gets signed — most expect it won't — but whether the two sides agree to simply extend the tariff truce they struck about a year ago, avoiding a fresh round of trade tension that could ripple through global markets, including India's."
+    ],
+    stats: [
+      {v:">$1 trillion", up:true, l:"China's global trade surplus, on pace for this year"},
+      {v:"$14bn", l:"A Taiwan arms deal Trump may use as a bargaining chip"},
+      {v:"Oct 2025", l:"When the original US–China tariff truce began"}
+    ],
+    source: "Mint · Global (Reuters)"
+  },
+  {
+    tag: "Commodities",
+    headline: "It's not oil that's running short — it's the ships that carry it, and that's still pushing fuel prices up",
+    body: [
+      "You'd expect fuel prices to track the price of crude oil closely. But right now, there's a second factor at play: a shortage of oil tankers, the giant ships that physically carry crude across oceans.",
+      "Drone attacks disrupted a key pipeline that Saudi Arabia normally uses to move oil around a dangerous chokepoint called the Strait of Hormuz — a narrow sea passage between Iran and Oman that a huge share of the world's oil must pass through. With that pipeline down, far more oil now has to travel the long way, through the strait itself, on an already-stretched fleet of tankers.",
+      "The result: shipping companies are charging record rates to hire these tankers — in some cases over $1 million a day, which can add up to roughly a quarter of the value of the oil cargo itself just in transport costs. Even if the price of crude oil on paper looks steady or even falls slightly, this extra shipping cost gets passed down the chain, keeping the fuel you eventually pay for at the pump more expensive than the headline crude price would suggest."
+    ],
+    stats: [
+      {v:"$1mn/day", up:true, l:"Cost to hire a large oil tanker"},
+      {v:"$98.15", l:"Brent crude oil price, per barrel"},
+      {v:"$101", l:"India's own crude import cost, per barrel"},
+      {v:"~2x", up:true, l:"How much tanker rental rates jumped in a week"}
+    ],
+    source: "Mint · Global (WSJ)"
+  },
+  {
+    tag: "Labour & industry",
+    headline: "9 out of every 10 auto-factory workers today are 'temporary' — not permanent employees",
+    body: [
+      "Walk into a car factory run by Maruti, Mahindra, Tata Motors, Hyundai or Hero today, and there's a very high chance most of the people on the assembly line are not permanent employees at all — they're temporary or contract workers, hired through third parties rather than directly by the company.",
+      "This share has jumped sharply over the past four years, now sitting at 83–92% of the workforce across these major manufacturers. Companies favour this model because it gives them flexibility: when demand for cars rises, they can quickly add workers; when demand cools, they can just as quickly reduce headcount, without the cost and complexity of laying off permanent staff.",
+      "But this flexibility comes with real trade-offs. Temporary workers typically earn less, have fewer benefits, and less job security than permanent employees doing similar work. This year, that tension boiled over into labour protests and wage disputes in industrial hubs across Haryana and Uttar Pradesh, eventually pushing both state governments to raise minimum wage levels. For an economy trying to create stable, well-paying jobs for a young workforce, this shift toward temporary hiring is becoming an important structural story to watch."
+    ],
+    stats: [
+      {v:"~90%", l:"Temporary workers, industry-wide average"},
+      {v:"87%", l:"Maruti Suzuki's share in FY26 (was 71% in FY23)"},
+      {v:"86%", l:"Mahindra & Mahindra's share in FY26"},
+      {v:"1,86,900+", l:"Temporary workers across just 7 major auto firms"}
+    ],
+    source: "Mint · Front Page"
+  },
+  {
+    tag: "Markets snapshot",
+    headline: "The stock indices closed higher — but that calm surface hid real stress underneath",
+    body: [
+      "On the surface, Monday looked like an unremarkable, quietly positive day for Indian stocks: both the Sensex and Nifty 50 — India's two main stock market indices, essentially scoreboards tracking a basket of the biggest listed companies — ended the day in the green.",
+      "But look just beneath that headline number, and the picture gets more interesting. On the very same day, foreign investors were piling into record bearish bets against the market (see the story on FPI short positions), and government bond yields were spiking to multi-year highs. This is a useful reminder for anyone learning to read financial news: a green index on a given day doesn't always mean 'all is well' — it's worth checking what's happening in bonds, currencies and investor positioning too, since those often move first and tell a fuller story."
+    ],
+    stats: [
+      {v:"74,858.99", up:true, l:"Sensex closing level, up 0.76%"},
+      {v:"23,414.30", up:true, l:"Nifty 50 closing level, up 0.29%"},
+      {v:"₹95.78", l:"Indian rupee's value against the US dollar"},
+      {v:"$98.15", l:"Brent crude oil price, per barrel"}
+    ],
+    source: "Mint · Mark to Market"
+  },
+  {
+    tag: "Banking",
+    headline: "JP Morgan's new India boss has a simple goal: be the biggest player in dealmaking",
+    body: [
+      "Rahul Badhwar took charge as JP Morgan's senior India officer in July, after three decades at rival bank HSBC, and he's wasted no time laying out an ambitious target — making JP Morgan the top 'wholesale bank' in India, the world's sixth-largest economy.",
+      "Wholesale banking, in plain terms, covers the big-ticket, behind-the-scenes financial work that doesn't involve everyday retail customers: helping large companies raise money by selling shares or bonds, advising on mergers and acquisitions, and lending money to big corporations rather than individuals. It's a different, higher-stakes business from the savings accounts and personal loans most of us are familiar with.",
+      "JP Morgan currently ranks second in India for the fees it earns from this kind of investment banking work, trailing only Citi. So far this year it has earned about $46 million in fees, after a strong $116 million haul across all of last year — including advising on some of India's biggest deals, like Sun Pharma's $13 billion purchase of a US pharmaceutical company. Badhwar's challenge now is to close the gap with Citi and turn JP Morgan's local presence into the market leader it aspires to be."
+    ],
+    stats: [
+      {v:"₹2.3 lakh cr", l:"JP Morgan's total lending exposure in India"},
+      {v:"#2", l:"Current ranking for India dealmaking fees"},
+      {v:"$46mn", l:"Fees earned so far in 2026"},
+      {v:"$116mn", up:true, l:"Total fees earned across all of 2025"}
+    ],
+    source: "Mint · Deals, Tech & Startups"
+  },
+  {
+    tag: "Governance",
+    headline: "A boardroom fight is testing the century-old structure behind one of India's most trusted business names",
+    body: [
+      "The Tata Group is unusual among big Indian companies in one important way: about two-thirds of its holding company, Tata Sons, is owned not by shareholders looking to maximise profit, but by charitable trusts — the Tata Trusts — that funnel dividends into healthcare, education and research. This structure has quietly funded public good for over a century.",
+      "That balance is now under real strain. The Tata Trusts and the Tata Sons board are locked in a legal dispute over the reappointment of N. Chandrasekaran as chairman, with each side pointing to different clauses in the company's founding rulebook to argue who has the final say. Layered on top of this, India's central bank, the RBI, has separately signalled it wants Tata Sons — because of its size and complexity — to eventually list its shares on the stock market, which could introduce public shareholders and quarterly scrutiny to a company that has never had either.",
+      "Why should this matter to anyone outside the Tata boardroom? Because how this plays out could set a precedent for how India balances two things that don't always sit easily together: a company's long-term, purpose-driven ownership and a regulator's demand for transparency and public accountability, especially for firms that are 'too important to fail' in the financial system."
+    ],
+    stats: [
+      {v:"~66%", l:"Tata Trusts' ownership stake in Tata Sons"},
+      {v:"18.4%", l:"Stake held by the Shapoorji Pallonji group"},
+      {v:"Article 118", l:"The specific rulebook clause at the centre of the dispute"}
+    ],
+    source: "Mint · Corporate"
+  },
+  {
+    tag: "IPO pipeline",
+    headline: "More big names are quietly lining up to sell shares to the public",
+    body: [
+      "Behind the scenes, several companies are preparing for future stock market debuts, even if their actual listings are still months away.",
+      "GAIL Gas, a state-owned company that supplies piped cooking gas and CNG across several Indian states, has started interviewing investment banks to manage an IPO that could raise up to ₹3,100 crore. This is part of the government's broader 'asset monetisation' plan, where state-run companies sell a portion of their stake to the public to raise funds while staying under government control overall.",
+      "Separately, global private equity firm Carlyle — a type of investment firm that buys stakes in companies, improves their operations, and later sells or lists them for a profit — is preparing to take its Indian auto-parts business, Highway Roop Precision, public, aiming to raise as much as $400 million. Both listings are being targeted for the first half of 2027, adding to what's shaping up to be a busy pipeline of Indian IPOs over the next year."
+    ],
+    stats: [
+      {v:"₹3,100cr", l:"GAIL Gas's targeted IPO size"},
+      {v:"$400mn", l:"Carlyle's targeted IPO size for its auto unit"},
+      {v:"₹12,681cr", l:"GAIL Gas's full-year revenue (FY26)"},
+      {v:"H1 2027", l:"Expected listing window for both"}
+    ],
+    source: "Mint · Corporate"
+  },
+  {
+    tag: "IPO watch",
+    headline: "A fintech lender just shrank its own IPO right before launch — here's what that usually signals",
+    body: [
+      "Moneyview, a digital lending app backed by well-known investor Accel, has trimmed the size of its upcoming IPO and now aims for a lower valuation of about ₹5,985 crore, down from what it had originally planned.",
+      "When a company reduces its IPO size or target valuation shortly before going public, it's often a sign that investment bankers sensed softer demand than expected while gauging interest from big institutional investors ahead of time — essentially, a company recalibrating its price to make sure the offer doesn't flop on opening day. It's a useful data point for anyone tracking investor appetite for India's newer fintech listings, especially after a mixed run of recent IPOs."
+    ],
+    stats: [
+      {v:"₹5,985cr", down:true, l:"Revised target valuation"},
+      {v:"₹750cr", down:true, l:"Fresh money the IPO will raise (trimmed)"},
+      {v:"24 Sep", l:"Date the IPO opens for public bidding"}
+    ],
+    source: "Mint · News Wrap"
+  },
+  {
+    tag: "Trade deal",
+    headline: "India's free trade deal with New Zealand goes live on 20 October — here's what actually changes",
+    body: [
+      "A Free Trade Agreement, or FTA, is essentially a deal between two countries to lower or remove the taxes — called tariffs — that normally apply when goods cross their borders. Starting 20 October, one such deal between India and New Zealand kicks in.",
+      "From day one, 100% of Indian exports will get duty-free entry into New Zealand — meaning Indian goods like textiles, leather products, engineering equipment and processed foods can be sold there without the extra tax that usually makes imported goods more expensive for local buyers. In return, India is lowering tariffs on about 70% of its own tariff categories for New Zealand goods, while still protecting sensitive sectors like dairy and certain farm products that Indian farmers rely on.",
+      "Both countries are hoping this roughly doubles their trade in goods and services to about ₹35,000 crore by 2030. For Indian exporters, especially in labour-intensive industries like textiles and leather, this opens up a market that was previously more expensive to sell into."
+    ],
+    stats: [
+      {v:"100%", up:true, l:"Indian exports getting duty-free access"},
+      {v:"70%", l:"Share of India's own tariffs being cut"},
+      {v:"₹35,000cr", l:"Target for bilateral trade by 2030"},
+      {v:"20 Oct", l:"Date the deal comes into force"}
+    ],
+    source: "Mint · Front Page"
+  },
+  {
+    tag: "Payments trend",
+    headline: "UPI is growing because of small, everyday purchases — not big spending",
+    body: [
+      "There's a quiet but revealing trend hiding in India's digital payments data: the average size of a single UPI transaction has actually been shrinking, even as the total number of transactions keeps climbing to new records.",
+      "A little over a year ago, the average UPI payment was about ₹1,338. Today, it's down to roughly ₹1,217. That might sound like a small decline, but it tells an important story: UPI's growth is now being driven by small, frequent, everyday purchases — a cup of tea, a bag of vegetables, an auto-rickshaw ride — rather than by fewer, larger transactions.",
+      "Today, payments to merchants (shops and businesses, as opposed to individuals) make up about 63% of all UPI volume, and a striking 86% of these merchant payments are for amounts under ₹500. For a country's economy, this is genuinely good news: it means digital payments have moved well past being a convenience for the well-off and are now woven into the most basic, daily transactions of ordinary Indians — a sign of just how deep financial inclusion has gone."
+    ],
+    stats: [
+      {v:"₹1,217", down:true, l:"Average UPI transaction size today"},
+      {v:"₹1,338", l:"Average size about a year ago"},
+      {v:"63%", l:"Share of UPI volume from merchant payments"},
+      {v:"86%", l:"Share of those payments under ₹500"}
+    ],
+    source: "Mint · Plain Facts"
+  }
+    ]
+  },
+  "2026-09-23": {
+    label: "23 Sep 2026",
+    stories: [
+  {
+    tag: "Payments",
+    headline: "Banks told to stock up ATMs before the new UPI fee kicks in",
+    body: [
+      "From 15 October, paying a shop more than ₹2,000 on UPI will start costing the shop a small fee — the MDR charge we covered a couple of days ago. The RBI and finance ministry are now quietly bracing for a possible side effect: people falling back on cash.",
+      "The worry is simple. If shoppers or shopkeepers feel even a little uneasy about the new charge, some may shift back to paying in cash instead of scanning a QR code. Since this change lands right as India's festive shopping season begins, the RBI and finance ministry have asked banks to make sure ATMs are properly stocked with cash from 15 October onward, just in case withdrawals spike.",
+      "This comes even as cash machines themselves have been shrinking for years: the number of bank ATMs has fallen from about 253,000 two years ago to roughly 251,000 today, mostly because banks have been shutting down less-used 'off-site' machines (the ones outside branches, like in malls) while keeping the ones inside branches running.",
+      "Yet in an interesting twist, even as digital payments have exploded, the actual amount of cash circulating in the economy has also been climbing — it's now over ₹42 trillion, up more than 12% from last year. Experts say this isn't really a contradiction: people use UPI for daily convenience but still keep cash for certain habits or as backup, and the new fee could tip a few of them back toward cash for bigger purchases, at least for a while."
+    ],
+    stats: [
+      {v:"15 Oct", l:"New UPI merchant fee takes effect"},
+      {v:"251,057", down:true, l:"Bank ATMs today (from 253,417 two years ago)"},
+      {v:"₹42.86 lakh cr", up:true, l:"Total currency in circulation, +12% YoY"},
+      {v:"₹2,000", l:"Fee applies only above this UPI amount"}
+    ],
+    source: "Mint · Front Page"
+  },
+  {
+    tag: "Governance",
+    headline: "A new disclosure gap surfaces in the Tata Sons boardroom fight",
+    body: [
+      "A fresh controversy has opened up at the Tata Group, layered right on top of the existing fight between Tata Trusts and the Tata Sons board over chairman N. Chandrasekaran's reappointment.",
+      "It turns out Chandrasekaran's son and wife own a company that has a business relationship with TVS Motor — and this tie was apparently never disclosed to the Tata Sons board. Here's why that matters: TVS Motor's chairman-emeritus, Venu Srinivasan, sits on the Tata Sons board and is also on the very committee that just voted to give Chandrasekaran a fresh term as chairman. When someone voting on a leader's reappointment (Srinivasan) has an undisclosed business tie to that leader's own family, it's exactly the kind of conflict of interest that corporate governance rules exist to catch and flag before a vote, not after.",
+      "Tata Sons says the company's formation was disclosed, just not the specific transaction details. Tata Trusts says no disclosure was made to it at all. TVS Motor, for its part, says the deal was struck with an independent entrepreneur (the son) and has nothing to do with TVS or the wider Tata Group as companies.",
+      "Whatever the outcome, this adds another layer to what is already one of India's most closely watched corporate governance battles — and it's a good reminder of why disclosure rules exist in the first place: not to presume anyone did anything wrong, but so that a company's board and shareholders can judge for themselves whether an important decision was made with all the relevant facts on the table."
+    ],
+    stats: [
+      {v:"4 of 6", l:"Tata Sons directors backed Chandrasekaran's 3rd term"},
+      {v:"₹106.3cr", l:"Value of the warehouse lease deal in question"},
+      {v:"8 months", l:"Length of Mint's investigation into the matter"},
+      {v:"Undisclosed", down:true, l:"Status of the family business tie, per Tata Trusts"}
+    ],
+    source: "Mint · Corporate"
+  },
+  {
+    tag: "Trade deal",
+    headline: "What India actually gets out of the New Zealand trade deal",
+    body: [
+      "Yesterday we covered that the India-New Zealand trade deal takes effect on 20 October. Today's paper goes deeper into what India specifically gains — and it's a genuinely strong deal for Indian exporters.",
+      "From day one, 100% of India's current exports to New Zealand will enter duty-free — the first time an Indian trade agreement has done this for every single tariff category right from the start, instead of phasing it in gradually over years. New Zealand currently charges Indian goods an average tariff of 2.2%, so removing that cost outright should make Indian products noticeably more competitive there.",
+      "The sectors expected to benefit most are labour-intensive ones that employ a lot of people: textiles and apparel, leather and footwear, engineering goods, pharmaceuticals, and agriculture. New Zealand buys about $2.2 billion of textiles and $1.4 billion of pharmaceutical products from the world every year — India now gets duty-free access to compete for a bigger slice of that.",
+      "India has kept a few 'sensitive' categories fully protected — dairy, certain animal products, onions, almonds, sugar — recognising that fully opening these up could hurt Indian farmers who'd otherwise compete with cheaper imports. On services, Indian IT, education and professional-services firms also get better access, along with a special visa route letting up to 5,000 skilled Indian professionals work in New Zealand at any given time. New Zealand has separately promised to help bring around $20 billion of foreign investment into India over time."
+    ],
+    stats: [
+      {v:"100%", up:true, l:"Indian exports getting duty-free access from day one"},
+      {v:"2.2%", l:"NZ's current average tariff on Indian goods"},
+      {v:"5,000", l:"Visa slots for skilled Indian professionals in NZ"},
+      {v:"$20bn", up:true, l:"FDI NZ has pledged to help bring into India"}
+    ],
+    source: "Mint · Primer"
+  },
+  {
+    tag: "Global bonds",
+    headline: "Bond investors are getting choosy about the flood of AI-fuelled debt",
+    body: [
+      "A strange split has opened up in the US corporate bond market — the market where big companies borrow money by selling debt (bonds) to investors instead of taking a bank loan.",
+      "Bonds from 'ordinary' large companies, like banks and industrial firms, are being snapped up eagerly. But bonds from AI-heavy tech giants — the companies spending enormous sums building data centres and buying chips — are being met with real caution. It's not that investors think these companies might go bankrupt; firms like Meta and Google's parent Alphabet generate huge amounts of cash. The worry is different: these companies are expected to keep coming back again and again to borrow more, to fund an AI spending spree whose eventual payoff is still unproven, and investors don't want too much of their money riding on that one bet.",
+      "Next year, these 'hyperscalers' — the companies running massive cloud-computing operations — are expected to borrow a record $420 billion through bonds, 60% more than this year. To get investors to buy that much debt, they're having to offer noticeably higher interest rates than similarly safe-rated 'normal' companies would need to — in effect, paying a premium just for being an AI-heavy borrower.",
+      "This matters beyond Wall Street: it's an early, real-money signal of how markets are starting to price in the risk that the AI investment boom could eventually run into trouble paying for itself, even while the underlying technology keeps advancing regardless."
+    ],
+    stats: [
+      {v:"$420bn", up:true, l:"Hyperscaler bond borrowing expected next year, +60%"},
+      {v:"$1.9 trillion", l:"Total US corporate bond issuance so far this year, +30%"},
+      {v:"115 bps", down:true, l:"Extra yield AI-linked bonds must offer investors"},
+      {v:"78 bps", l:"Typical spread for the broader investment-grade market"}
+    ],
+    source: "Mint · Global (Reuters)"
+  },
+  {
+    tag: "Markets",
+    headline: "India's IPO and share-sale boom may cool off from last year's record",
+    body: [
+      "India's stock-market fundraising machine — companies selling new shares through IPOs, big block trades and other share sales — is on track to raise less money in 2026 than it did in last year's record run, according to investment bank Jefferies.",
+      "Total fundraising this year is expected to land between $55-60 billion, versus over $60 billion last year, with IPOs specifically raising $17-19 billion against $20 billion in 2025. The slowdown traces back to a cautious start to the year, driven by uncertainty over crude oil prices and global interest rates, both of which make investors more hesitant to commit fresh money right away.",
+      "Still, there's a real silver lining: Indian IPOs have already added roughly $110 billion in stock-market value this year, a figure that could cross $200 billion by December with a few large listings still to come. Jefferies expects this IPO wave to keep building for years, forecasting $1.5 trillion of new market value over the next five to seven years, as more mid-sized Indian companies (worth $1-10 billion each) decide it's time to go public.",
+      "One reason companies are rushing to list sooner rather than later: private equity firms — investors who put large sums into private companies before they go public — increasingly see an IPO as their easiest route to eventually sell their stake and exit, which is nudging more companies toward the stock market faster than before."
+    ],
+    stats: [
+      {v:"$17-19bn", down:true, l:"Expected 2026 IPO fundraising (vs $20bn in 2025)"},
+      {v:"$55-60bn", l:"Total 2026 equity fundraising estimate"},
+      {v:"$110bn", up:true, l:"Market value added by 2026 IPOs so far"},
+      {v:"$1.5 trillion", up:true, l:"Long-term IPO opportunity over next 5-7 years"}
+    ],
+    source: "Mint · Deals, Tech & Startups"
+  },
+  {
+    tag: "IPO",
+    headline: "LIC placed the single biggest bid in NSE's giant IPO",
+    body: [
+      "We covered NSE's somewhat underwhelming stock market debut a couple of days back. Today we learn exactly who was behind the demand: India's state-run insurance giant LIC placed the single biggest bid of all, worth about ₹4,500 crore.",
+      "Other major buyers included ICICI Prudential Asset Management and Quant Mutual Fund (around ₹2,000 crore each), plus foreign investors like Norway's Norges Bank and Mirae Asset. These are all 'long-only' institutional investors — big, patient funds that typically hold stocks for years rather than trade in and out quickly — and their heavy participation signals real confidence in NSE's future, even though ordinary retail investors were far more cautious this time around.",
+      "One risk these big investors are watching closely: more than 60% of NSE's revenue currently comes from fees on options trading (a type of derivative contract used for speculation and hedging), and Indian regulators have been tightening rules to curb excessive speculative trading in this segment. If that crackdown continues, it could dent NSE's single most important source of revenue going forward.",
+      "NSE's shares actually start trading on the BSE (its rival exchange — NSE listed there to avoid an obvious conflict of interest) from 24 September, priced at about 43 times its expected earnings — a fairly rich valuation that puts pressure on the company to keep growing quickly to justify it."
+    ],
+    stats: [
+      {v:"₹4,500cr", up:true, l:"LIC's bid — the single largest in the IPO"},
+      {v:"43x", l:"NSE's valuation, as a multiple of FY26 earnings"},
+      {v:">60%", l:"Share of NSE's revenue from options trading fees"},
+      {v:"24 Sep", l:"Date NSE shares start trading on BSE"}
+    ],
+    source: "Mint · Mark to Market"
+  },
+  {
+    tag: "NBFC",
+    headline: "Tata Capital's growth is strong, but shrinking margins are worrying investors",
+    body: [
+      "Tata Capital, the group's lending arm (it lends to individuals, small businesses and large companies), has seen its stock fall 12.5% from its August peak, even though it still trades above the price at which it listed earlier this year.",
+      "The core issue is something called 'net interest margin', or NIM — essentially the gap between what a lender earns on the loans it hands out and what it pays to raise that money in the first place, through deposits, bonds or bank borrowings. Tata Capital's NIM has slipped to a three-quarter low of 5.03%, because its own borrowing costs have risen faster than what it can charge borrowers, especially with investors now expecting the RBI to raise interest rates in October.",
+      "On the positive side, the company's total loan book grew a healthy 22% over the past year to ₹2.9 trillion, and the share of borrowers who've stopped repaying their loans has actually been shrinking for three straight quarters. Management is confident this growth can continue at 23-25% a year, helped by strong demand from retail customers and small businesses, who together make up 85-87% of its loan book.",
+      "The bigger risk to watch: a large chunk of Tata Capital's own borrowing — 84-85% — is linked to short-term interest rates that move in step with RBI policy. That helped it during the recent period of rate cuts, but could work against it if rates start climbing instead — a pattern many Indian lenders now have to navigate carefully in the months ahead."
+    ],
+    stats: [
+      {v:"5.03%", down:true, l:"Net interest margin — a 3-quarter low"},
+      {v:"₹2.9 lakh cr", up:true, l:"Total loan book, up 22% year-on-year"},
+      {v:"-12.5%", down:true, l:"Stock's fall from its August peak"},
+      {v:"56%", up:true, l:"Net profit growth to ₹1,628 crore"}
+    ],
+    source: "Mint · Mark to Market"
+  },
+  {
+    tag: "Fixed income",
+    headline: "Companies are quietly turning away from selling bonds to the public",
+    body: [
+      "Indian companies are increasingly avoiding one particular way of raising money: selling bonds directly to the public. Fundraising through this route has fallen to a three-year low — just ₹3,898 crore raised so far this year, down from ₹4,740 crore a year earlier, with fewer bond issues overall too.",
+      "Why the retreat? Bank loans have become cheaper and easier to access lately, making them more attractive than the lengthy, expensive process of a public bond sale. Public bonds also take longer to execute and can be hard to sell once issued, since there isn't always a ready market of buyers wanting to trade them afterward — unlike a company's shares, which trade constantly on the stock exchange.",
+      "Companies still raising money through bonds are increasingly opting for 'private placement' instead — quietly selling bonds directly to a handful of big institutional investors rather than opening the sale to the general public. It's faster and cheaper to execute, but it also means ordinary retail investors get fewer chances to invest directly in corporate bonds themselves.",
+      "This has real consequences for everyday investors, who are often left choosing between bank fixed deposits and hard-to-exit corporate bonds, without much of a middle ground. Experts say what would really help revive the public bond market is making it easier for retail investors to sell their bonds back if they need the money early."
+    ],
+    stats: [
+      {v:"₹3,898cr", down:true, l:"Public bond fundraising this year — a 3-year low"},
+      {v:"₹4,740cr", l:"Same period, a year earlier"},
+      {v:"15", down:true, l:"Number of public bond issues (down from 20)"},
+      {v:"8.52%", down:true, l:"Bank lending rate — now cheaper than before"}
+    ],
+    source: "Mint · News Wrap"
+  },
+  {
+    tag: "Commodities",
+    headline: "Gold has doubled since 2023 — fund managers still see room to run",
+    body: [
+      "Gold prices have more than doubled since 2023, and fund managers say there's little reason to expect the rally to end soon. Central banks buying gold to diversify their reserves, rising government debt worldwide, and ongoing geopolitical tension keep pushing investors toward the metal — traditionally seen as a 'safe haven' asset that tends to hold its value even when other investments fall.",
+      "One telling detail: a 2026 survey found 84% of the world's central-bank reserve managers expect gold's share of global reserves to keep rising over the next five years, up from 76% just a year earlier. Meanwhile, total US government debt has crossed 100% of the country's entire yearly economic output (GDP) for the first time ever — a factor that traditionally makes gold more attractive as an alternative store of value when trust in paper currency wavers.",
+      "For investors wanting more upside than physical gold offers, fund managers point to gold-mining company shares — stocks of companies that actually dig gold out of the ground. These can rise even faster than gold prices during a rally, because once a mining company's operating costs are covered, extra revenue from higher gold prices flows straight through to profit, a concept called 'operating leverage'. The flip side: these stocks also carry extra company-specific and stock-market risks on top of gold's own price swings.",
+      "To put the scale in perspective: ₹1 lakh invested in physical gold in August 2023 would be worth about ₹2.29 lakh today, a 130% gain. The same amount put into gold-mining stocks would be worth roughly ₹3.77 lakh — a 278% gain — showing how much extra punch mining stocks can add to a gold rally, for those willing to take on the added risk."
+    ],
+    stats: [
+      {v:"130%", up:true, l:"Physical gold's return since August 2023"},
+      {v:"278%", up:true, l:"Gold-mining stocks' return over the same period"},
+      {v:"84%", l:"Central banks expecting to raise their gold reserves"},
+      {v:">100%", l:"US public debt as a share of GDP — first time ever"}
+    ],
+    source: "Mint · Mark to Market"
+  },
+  {
+    tag: "Payments",
+    headline: "UPI credit cards: a new way to earn rewards on everyday QR payments",
+    body: [
+      "A new category of credit cards is emerging in India that lets you earn rewards on your everyday UPI payments — the QR-code scans you already do at shops — something a regular UPI transfer straight from your bank account doesn't offer.",
+      "Here's how it works: you link a special RuPay-branded credit card to a UPI app. When you scan a merchant's QR code, you choose to pay using this credit card instead of your bank account, and the amount goes onto your credit card bill instead of being debited immediately. You still get your usual credit-card benefits — an interest-free period, plus rewards — just now for UPI spends too. Note this only works for paying shops, not for sending money to another person.",
+      "Some of the better current options: Jupiter's Edge+ card offers up to 10% back, as in-app currency, on shopping through specific partner brands via its app (though only 1% on regular, everyday UPI spends). Kredit.Pe's Yes Bank ACE card offers a simpler flat 3% cashback on UPI payments made through its app, rising to 5% once you cross ₹10,000 in monthly spending, with no complicated caps. Kiwi's Klick card starts at 1.5% cashback, rising to 5% with a paid membership and milestone spending.",
+      "These cards work best for people who want to build a credit history using spending patterns they already have, rather than changing their habits to chase rewards. One caution worth repeating: a 3-10% cashback means little if you end up paying credit-card interest because you didn't clear the bill in full each month — that interest typically runs far higher than any reward you'd have earned."
+    ],
+    stats: [
+      {v:"10%", up:true, l:"Jupiter Edge+'s top reward rate (select brands)"},
+      {v:"3-5%", l:"Kredit.Pe ACE's flat UPI cashback range"},
+      {v:"1.5-5%", l:"Kiwi Klick's cashback range (with membership)"},
+      {v:"₹2,000", l:"New MDR threshold driving this trend"}
+    ],
+    source: "Mint · Mint Money"
+  },
+  {
+    tag: "Energy",
+    headline: "Reliance's fuel arm caps diesel sales as the West Asia war squeezes supply",
+    body: [
+      "Reliance's fuel retail joint venture, Jio-bp, has started rationing diesel — capping sales at just 50 litres per customer per transaction, and 6,000 litres total per day, at each of its roughly 2,000 fuel pumps across India.",
+      "The reason traces back to the ongoing West Asia conflict, which has disrupted oil supply routes and kept global crude prices elevated — hovering above $100 a barrel for weeks, touching a four-month high of $110 in mid-September. This squeeze on supply chains has forced some fuel retailers, Jio-bp included, to ration sales so existing stock lasts longer.",
+      "This restriction mainly hurts businesses that need large diesel fills in one go: long-haul trucking companies, bus operators, and farmers running diesel-powered equipment, who'd normally fill up in bulk rather than making frequent smaller stops. Government-owned fuel retailers like Indian Oil, Bharat Petroleum and Hindustan Petroleum haven't imposed similar caps so far, giving customers an alternative — though it's unclear how long that gap holds if crude prices stay elevated.",
+      "Despite the tighter supply, Jio-bp says it hasn't raised its pump prices this year, unlike some competitors — a strategy it had used before the war to win market share by staying cheaper than rivals. Whether that holds if global oil prices stay high for much longer remains to be seen."
+    ],
+    stats: [
+      {v:"50 litres", down:true, l:"New diesel cap per customer per transaction"},
+      {v:"6,000 litres", l:"Daily diesel cap per fuel outlet"},
+      {v:"2,000", l:"Jio-bp outlets affected nationwide"},
+      {v:"$110", up:true, l:"Brent crude's recent 4-month high, per barrel"}
+    ],
+    source: "Mint · Economy & Policy"
+  },
+  {
+    tag: "Commodities",
+    headline: "Saudi Arabia spent months avoiding Hormuz. Now it has no way around it",
+    body: [
+      "For months, Saudi Arabia worked hard to avoid sending its oil through the Strait of Hormuz — the narrow, high-risk sea passage between Iran and Oman that a huge share of the world's oil normally passes through, and which has come under repeated attack during the ongoing West Asia conflict.",
+      "Saudi Arabia built workarounds: rerouting oil overland by pipeline to the Red Sea port of Yanbu, and later shipping some through the Suez Canal after Red Sea routes also came under attack from Iran-backed Houthi militants. But when drone attacks recently knocked out the key pipeline feeding the Yanbu route, Saudi Arabia was left with no real alternative — it has had to go back to sending oil through Hormuz itself, the very route it had spent months trying to avoid.",
+      "The cost of this detour has been dramatic: shipping a barrel of Saudi crude from its main export terminal to a refinery in China now costs up to $63 million per shipment in transport alone, up from around $4.5 million before the crisis — more than a 10-fold jump, driven by scarce ships and sky-high insurance costs for sailing through a conflict zone.",
+      "This matters well beyond Saudi Arabia: it's a real-world lesson in why you can't simply 'build your way around' a geopolitical chokepoint. US officials once suggested new pipelines could make Hormuz a 'worthless piece of water' within two years — but as this episode shows, when several alternative routes get attacked at once, sometimes there's no safe detour left at all."
+    ],
+    stats: [
+      {v:"$63mn", up:true, l:"Cost to ship one cargo of Saudi crude to China (was $4.5mn)"},
+      {v:"2.4mn barrels/day", l:"Saudi crude now flowing back through Hormuz"},
+      {v:"$98-100", l:"Brent crude price, per barrel"},
+      {v:">$1mn/day", l:"Cost to hire a large oil tanker"}
+    ],
+    source: "Mint · Global (WSJ)"
+  },
+  {
+    tag: "Macro",
+    headline: "Should India's 4% inflation target change in a world of pricier goods?",
+    body: [
+      "India's central bank committee that sets interest rates (the Monetary Policy Committee, or MPC) meets again in early October, and there's a growing expectation it may raise its key interest rate — which would make loans more expensive across the economy, but is meant to keep rising prices in check.",
+      "Three reasons are driving this expectation: price pressures have been spreading beyond just food and fuel into the wider economy; global interest rates, especially in the US, have been climbing steadily; and previous RBI meeting notes already hinted policymakers were leaning this way.",
+      "This raises a bigger, more interesting question this column explores: should India reconsider its long-standing inflation target of 4% altogether? That number was set partly on the idea that inflation in rich countries like the US typically runs about 2%, plus an extra 2-percentage-point buffer to account for India (and other developing economies) naturally running somewhat higher inflation while their economies catch up.",
+      "The twist: inflation in the US, UK, Japan and Germany has been running noticeably above their own targets for two years now — closer to 3% in the US, a full percentage point above what its central bank wants. If inflation stays structurally higher across the world's major economies for longer, it raises a genuine question of whether India's 4% target should eventually move up too — though the piece cautions that changing an inflation target casually can undermine the very credibility that makes it work."
+    ],
+    stats: [
+      {v:"4%", l:"India's current inflation target (+/- 2 pts band)"},
+      {v:"~3%", up:true, l:"US average inflation since mid-2023 (vs its 2% target)"},
+      {v:"Early Oct", l:"India's next rate-setting MPC meeting"},
+      {v:"1.25 pts", l:"Gap between India and US 10-year bond yields"}
+    ],
+    source: "Mint · Cafe Economics"
+  },
+  {
+    tag: "IPO",
+    headline: "Used-car platform Spinny files confidentially for a ₹3,000 crore IPO",
+    body: [
+      "Spinny, the used-car buying and selling platform, has quietly filed papers with India's stock market regulator to go public, aiming to raise ₹3,000 crore. It's using a 'confidential' filing route — meaning the detailed paperwork isn't made public yet — which companies often use to test investor interest and fine-tune their pitch before officially launching the IPO.",
+      "Founded in 2015, Spinny entered India's used-car market at a time when buyers were increasingly looking for more trustworthy, better-value alternatives to the traditional, often opaque secondhand car dealership. It has grown into one of the largest players in the space, backed by well-known investors like Tiger Global, Accel and General Catalyst.",
+      "The financials show a business growing fast but still losing money: revenue jumped from ₹3,822 crore to ₹4,746 crore last year, while losses narrowed from ₹590 crore to ₹424 crore — a pattern common among fast-growing Indian consumer startups that prioritise growth and market share for now, betting they can turn profitable once they reach enough scale.",
+      "India's used-car market itself is currently valued at about $53 billion and is projected to nearly double to $68-78 billion by 2031, according to one industry estimate — which helps explain why investors keep backing companies like Spinny (and rivals Cars24, Droom and CarDekho) despite the ongoing losses, betting on the market's long runway ahead."
+    ],
+    stats: [
+      {v:"₹3,000cr", l:"Spinny's targeted IPO size"},
+      {v:"₹4,746cr", up:true, l:"FY26 revenue (up from ₹3,822cr)"},
+      {v:"₹424cr", down:true, l:"FY26 loss, narrowed from ₹590cr"},
+      {v:"$68-78bn", up:true, l:"Projected size of India's used-car market by FY31"}
+    ],
+    source: "Mint · Deals, Tech & Startups"
+  },
+  {
+    tag: "IPO",
+    headline: "Snapdeal returns to the stock market with a much smaller, humbler story",
+    body: [
+      "Snapdeal, once one of India's earliest and biggest e-commerce hopes before it lost ground to Amazon and Flipkart, is heading to the stock market again — but this time with a deliberately modest story to tell.",
+      "Its parent company, AceVector, is seeking a valuation of about ₹1,741 crore through its IPO — a small fraction of the roughly $6.5 billion Snapdeal was valued at during its 2016 peak, when it was seen as a serious rival to Amazon and Flipkart in India.",
+      "Rather than trying to be 'everything to everyone' again, Snapdeal has repositioned itself around affordable fashion for value-conscious shoppers, especially in smaller towns and cities — filling the gap between ultra-cheap unbranded goods and pricier branded fashion. More than two-thirds of its customers today are Gen Z, many of whom, the company points out, were too young to have known Snapdeal's earlier, struggling years and simply experience it as it is today.",
+      "Financially, the turnaround is real on paper: revenue grew 30% last year to ₹510 crore, and losses narrowed sharply from ₹126 crore to ₹45 crore. The company credits this to having no factories or warehouses of its own to maintain — an 'asset-light' model that relies on partners for manufacturing and logistics — a much leaner approach than its earlier ambitions of building a giant e-commerce empire from scratch."
+    ],
+    stats: [
+      {v:"₹1,741cr", l:"AceVector (Snapdeal)'s targeted IPO valuation"},
+      {v:"$6.5bn", down:true, l:"Snapdeal's peak valuation back in 2016"},
+      {v:"30%", up:true, l:"FY26 revenue growth, to ₹510 crore"},
+      {v:"₹45cr", down:true, l:"FY26 loss, narrowed from ₹126 crore"}
+    ],
+    source: "Mint · Corporate"
+  },
+  {
+    tag: "IPO",
+    headline: "Student-housing company Elevate Campuses grows fast, but so does its debt",
+    body: [
+      "Elevate Campuses, a company that builds and manages student housing and school buildings which it leases to education operators, is raising ₹2,100 crore through an IPO this week — but its rapid growth has come paired with a fast-rising pile of debt, which is exactly what investors are weighing now.",
+      "The business model is fairly straightforward: colleges and schools often have money tied up in real estate. Elevate buys or builds this property, then earns steady rental and service income from institutions that would rather focus on teaching than managing buildings. Revenue has grown at a healthy pace, and profit margins have widened notably.",
+      "The catch: to fund several recent acquisitions of new campuses and schools, Elevate's debt has grown even faster than its profits — net debt jumped from about ₹695 crore to ₹2,713 crore in just one year, nearly quadrupling. A key measure of how comfortably a company can handle its debt load worsened from 2.71 times its annual profit to nearly 5 times.",
+      "Over half the IPO money will go straight toward funding more acquisitions and paying down this debt, rather than being pure fresh growth capital. For investors, the question is whether income from Elevate's new properties will ramp up fast enough to comfortably support the debt taken on to buy them — a familiar tension for any business growing quickly through acquisitions rather than from scratch."
+    ],
+    stats: [
+      {v:"₹2,100cr", l:"Elevate Campuses' IPO size"},
+      {v:"₹2,713cr", up:true, l:"Net debt, up from ₹695cr in just one year"},
+      {v:"4.98x", down:true, l:"Debt-to-profit ratio (worsened from 2.71x)"},
+      {v:"₹343-362", l:"IPO price band, per share"}
+    ],
+    source: "Mint · Mark to Market"
+  },
+  {
+    tag: "US markets",
+    headline: "Wall Street's 'Magnificent Seven' roars back, led by a surprise Meta rally",
+    body: [
+      "Wall Street's 'Magnificent Seven' — the nickname for the seven giant US tech companies (Apple, Microsoft, Google's Alphabet, Amazon, Nvidia, Meta and Tesla) that have driven much of the US stock market's recent gains — is roaring back, and this time Meta, Facebook's parent company, is leading the charge.",
+      "Meta's stock jumped 11% in a single day, its best one-day gain in over a year, after its new AI assistant app, called Muse, shot to the No.1 spot on Apple's App Store. The surge added about $192 billion to Meta's market value in a single day, and pushed founder Mark Zuckerberg's personal net worth up to roughly $253.6 billion.",
+      "Why would one app's popularity move a stock this much? Investors had been nervous that Meta was spending enormous sums on AI without clear proof it would ever pay off. Muse quickly becoming genuinely popular is seen as early evidence that Meta might finally have a consumer AI product people actually want to use — not just something built to justify the spending.",
+      "The rally wasn't limited to Meta: all seven 'Magnificent Seven' stocks closed higher that day, AI chipmaker AMD's value crossed $1 trillion for the first time, and even bitcoin rallied toward its highest levels in months — a reminder of how closely tied the fate of the entire US stock market has become to investor confidence in a handful of AI-focused technology companies."
+    ],
+    stats: [
+      {v:"+11%", up:true, l:"Meta's one-day stock jump — best in over a year"},
+      {v:"$192bn", up:true, l:"Market value Meta added in a single day"},
+      {v:"$253.6bn", up:true, l:"Mark Zuckerberg's estimated net worth"},
+      {v:"$1 trillion", up:true, l:"AMD's market cap, crossed for the first time"}
+    ],
+    source: "Mint · Global (WSJ)"
+  },
+  {
+    tag: "China & trade",
+    headline: "How one Chinese magnet maker gives Xi leverage over the US",
+    body: [
+      "As China's Xi Jinping heads into a high-stakes meeting with US president Donald Trump this week, one under-the-radar Chinese company shows exactly why China holds so much leverage in trade talks: a magnet maker called JL Mag Rare Earth Co.",
+      "Rare earths are a group of minerals essential to almost everything modern — electric-car motors, missiles, smartphones, wind turbines and robots. China doesn't just mine most of the world's rare earths; more importantly, it dominates the harder, more valuable steps that come after mining: refining these minerals and turning them into the finished high-performance magnets that machines actually use. JL Mag alone now has more than 10 times the production capacity of its closest American competitor.",
+      "The scale gap is stark: the top US rare-earth magnet company, MP Materials, only started producing magnets last year, backed by a $400 million US government investment, and plans to eventually reach 10,000 tonnes of yearly capacity. JL Mag already produces several times that, and is still expanding — it plans to grow capacity by another 50% by next year alone.",
+      "This matters hugely for future industries like humanoid robots, where China already accounts for 97% of global shipments — because robots need powerful magnets in their joints to work like muscles, and whoever controls magnet supply controls a critical ingredient of that industry. Even as the US and its allies pour billions into rival rare-earth supply chains, analysts say catching up to China's decades of manufacturing scale, cost efficiency and technical know-how will take far longer than most Western projects currently assume."
+    ],
+    stats: [
+      {v:">10x", up:true, l:"JL Mag's capacity vs its closest US rival"},
+      {v:"94%", l:"China's share of global rare-earth magnet manufacturing"},
+      {v:"97%", up:true, l:"China's share of global humanoid robot shipments"},
+      {v:"10,000 t/yr", l:"US rival MP Materials' planned eventual capacity"}
+    ],
+    source: "Mint · Long Story"
+  }
+    ]
+  }
+};
+
+/* ============================================================
+   UI layer — no need to touch this when refreshing NEWS_BY_DATE
+   ============================================================ */
+const wrap = document.getElementById('cardwrap');
+const progressRow = document.getElementById('progressRow');
+const yearSelect = document.getElementById('yearSelect');
+const monthSelect = document.getElementById('monthSelect');
+const daySelect = document.getElementById('daySelect');
+const metaTop = document.getElementById('metaTop');
+const prevZone = document.getElementById('prevZone');
+const nextZone = document.getElementById('nextZone');
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+const dateKeys = Object.keys(NEWS_BY_DATE).sort(); // chronological, oldest to newest
+let currentDate = dateKeys[dateKeys.length - 1]; // default to the latest date with news
+let stories = [];
+let idx = 0;
+let cardEls = [];
+
+// Build a nested year -> month -> [days] index from the flat date keys,
+// so the dropdowns only ever show dates that actually have news.
+const dateIndex = {};
+dateKeys.forEach(key => {
+  const [y, m, d] = key.split('-');
+  dateIndex[y] = dateIndex[y] || {};
+  dateIndex[y][m] = dateIndex[y][m] || [];
+  dateIndex[y][m].push(d);
+});
+
+function fmtVal(s){
+  const cls = s.up ? 'v up' : (s.down ? 'v down' : 'v');
+  const arrow = s.up ? '▲' : (s.down ? '▼' : '');
+  return `<div class="${cls}">${arrow ? `<span>${arrow}</span>`:''}${s.v}</div>`;
+}
+
+function buildCard(item){
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.innerHTML = `
+    <div class="cardscroll">
+      <div class="cardinner">
+        <span class="tag">${item.tag}</span>
+        <h1>${item.headline}</h1>
+        <div class="dek">
+          ${item.body.map(p => `<p>${p}</p>`).join('')}
+        </div>
+        <div class="stats">
+          ${item.stats.map(s => `
+            <div class="stat">
+              ${fmtVal(s)}
+              <div class="l">${s.l}</div>
+            </div>`).join('')}
+        </div>
+        <div class="source">${item.source} · Story ${item._n} of ${stories.length}</div>
+      </div>
+      <div class="scrollcue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+    </div>
+  `;
+  const scrollEl = el.querySelector('.cardscroll');
+  const cueParent = scrollEl; // scrollHeight/scrollTop measured here
+  scrollEl.addEventListener('scroll', () => {
+    const atBottom = cueParent.scrollHeight - cueParent.scrollTop - cueParent.clientHeight < 24;
+    scrollEl.classList.toggle('at-bottom', atBottom);
+  }, {passive:true});
+  return el;
+}
+
+function fillSelect(selectEl, options){
+  selectEl.innerHTML = options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+}
+
+// Populate the year dropdown with every year that has at least one story.
+function populateYears(selectedYear){
+  const years = Object.keys(dateIndex).sort();
+  fillSelect(yearSelect, years.map(y => ({value:y, label:y})));
+  yearSelect.value = selectedYear;
+}
+
+// Populate the month dropdown with only the months that have news for the given year.
+function populateMonths(year, selectedMonth){
+  const months = Object.keys(dateIndex[year]).sort();
+  fillSelect(monthSelect, months.map(m => ({value:m, label:MONTH_NAMES[parseInt(m,10)-1]})));
+  monthSelect.value = selectedMonth;
+}
+
+// Populate the day dropdown with only the days that have news for the given year+month.
+function populateDays(year, month, selectedDay){
+  const days = dateIndex[year][month].slice().sort();
+  fillSelect(daySelect, days.map(d => ({value:d, label:String(parseInt(d,10))})));
+  daySelect.value = selectedDay;
+}
+
+function initDatePicker(){
+  const [y, m, d] = currentDate.split('-');
+  populateYears(y);
+  populateMonths(y, m);
+  populateDays(y, m, d);
+}
+
+function goToDate(key){
+  if(key === currentDate) return;
+  currentDate = key;
+  idx = 0;
+  renderAll();
+}
+
+yearSelect.addEventListener('change', () => {
+  const y = yearSelect.value;
+  const months = Object.keys(dateIndex[y]).sort();
+  const m = months[0];
+  populateMonths(y, m);
+  const days = dateIndex[y][m].slice().sort();
+  const d = days[0];
+  populateDays(y, m, d);
+  goToDate(`${y}-${m}-${d}`);
+});
+
+monthSelect.addEventListener('change', () => {
+  const y = yearSelect.value;
+  const m = monthSelect.value;
+  const days = dateIndex[y][m].slice().sort();
+  const d = days[0];
+  populateDays(y, m, d);
+  goToDate(`${y}-${m}-${d}`);
+});
+
+daySelect.addEventListener('change', () => {
+  const y = yearSelect.value;
+  const m = monthSelect.value;
+  const d = daySelect.value;
+  goToDate(`${y}-${m}-${d}`);
+});
+
+function renderAll(){
+  stories = NEWS_BY_DATE[currentDate].stories;
+  wrap.innerHTML = '';
+  cardEls = stories.map((item, i) => {
+    item._n = i + 1;
+    const el = buildCard(item);
+    el.classList.add(i === 0 ? 'active' : 'enter-right');
+    el.style.zIndex = i === 0 ? 2 : 1;
+    wrap.appendChild(el);
+    return el;
+  });
+  buildDots();
+  updateMeta();
+}
+
+function buildDots(){
+  progressRow.innerHTML = '';
+  stories.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < idx ? ' done' : '') + (i === idx ? ' now' : '');
+    d.addEventListener('click', () => goTo(i));
+    progressRow.appendChild(d);
+  });
+}
+
+function updateMeta(){
+  metaTop.textContent = `${idx+1} / ${stories.length} · ${NEWS_BY_DATE[currentDate].label}`;
+  prevZone.classList.toggle('disabled', idx === 0);
+  nextZone.classList.toggle('disabled', idx === stories.length - 1);
+}
+
+function goTo(newIdx){
+  if(newIdx < 0 || newIdx >= stories.length || newIdx === idx) return;
+  const dir = newIdx > idx ? 1 : -1;
+  const current = cardEls[idx];
+  const next = cardEls[newIdx];
+
+  current.classList.remove('active');
+  current.classList.add(dir > 0 ? 'leave-left' : 'leave-right');
+  current.style.zIndex = 1;
+
+  next.classList.remove('enter-right','enter-left','leave-left','leave-right');
+  const nextScroll = next.querySelector('.cardscroll');
+  if(nextScroll) nextScroll.scrollTop = 0;
+  next.classList.add(dir > 0 ? 'enter-right' : 'enter-left');
+  next.style.zIndex = 2;
+  // force reflow so the transition triggers
+  void next.offsetWidth;
+  requestAnimationFrame(() => {
+    next.classList.remove('enter-right','enter-left');
+    next.classList.add('active');
+  });
+
+  idx = newIdx;
+  buildDots();
+  updateMeta();
+}
+
+prevZone.addEventListener('click', () => goTo(idx - 1));
+nextZone.addEventListener('click', () => goTo(idx + 1));
+prevZone.addEventListener('keydown', e => { if(e.key==='Enter') goTo(idx-1); });
+nextZone.addEventListener('keydown', e => { if(e.key==='Enter') goTo(idx+1); });
+
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'ArrowRight') goTo(idx + 1);
+  if(e.key === 'ArrowLeft') goTo(idx - 1);
+});
+
+// touch / drag swipe on the card stack — only triggers on a mostly-horizontal
+// gesture, so vertical scrolling to read a card is never hijacked
+let startX = null, startY = null, dragging = false;
+wrap.addEventListener('touchstart', (e) => {
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+  dragging = true;
+}, {passive:true});
+wrap.addEventListener('touchend', (e) => {
+  if(!dragging || startX === null) return;
+  const dx = e.changedTouches[0].clientX - startX;
+  const dy = e.changedTouches[0].clientY - startY;
+  if(Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(dy) * 1.4){
+    if(dx < 0) goTo(idx + 1); else goTo(idx - 1);
+  }
+  dragging = false; startX = null; startY = null;
+}, {passive:true});
+
+let mouseStartX = null, mouseStartY = null, mouseDown = false;
+wrap.addEventListener('mousedown', (e) => { mouseDown = true; mouseStartX = e.clientX; mouseStartY = e.clientY; });
+window.addEventListener('mouseup', (e) => {
+  if(!mouseDown || mouseStartX === null) return;
+  const dx = e.clientX - mouseStartX;
+  const dy = e.clientY - mouseStartY;
+  if(Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.4){
+    if(dx < 0) goTo(idx + 1); else goTo(idx - 1);
+  }
+  mouseDown = false; mouseStartX = null; mouseStartY = null;
+});
+
+initDatePicker();
+renderAll();
+// initialise scroll-cue visibility for the first card
+requestAnimationFrame(() => {
+  const firstScroll = cardEls[0] && cardEls[0].querySelector('.cardscroll');
+  if(firstScroll) firstScroll.dispatchEvent(new Event('scroll'));
+});
+
+/* ============================================================
+   Fullscreen toggle — hides browser chrome on mobile so only
+   the Ledger UI is visible. Falls back gracefully (hides the
+   button) on browsers/webviews that don't support the API.
+   ============================================================ */
+const fsBtn = document.getElementById('fsBtn');
+const fsIcon = document.getElementById('fsIcon');
+const EXPAND_ICON = `<polyline points="8 3 3 3 3 8"></polyline><polyline points="16 3 21 3 21 8"></polyline><polyline points="3 16 3 21 8 21"></polyline><polyline points="21 16 21 21 16 21"></polyline>`;
+const COMPRESS_ICON = `<polyline points="3 8 8 8 8 3"></polyline><polyline points="21 8 16 8 16 3"></polyline><polyline points="8 21 8 16 3 16"></polyline><polyline points="16 21 16 16 21 16"></polyline>`;
+
+function fsElement(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement || null;
+}
+function fsSupported(){
+  const el = document.documentElement;
+  return !!(el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen);
+}
+function updateFsButton(){
+  const active = !!fsElement();
+  fsIcon.innerHTML = active ? COMPRESS_ICON : EXPAND_ICON;
+  fsBtn.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+  fsBtn.title = active ? 'Exit fullscreen' : 'Fullscreen';
+}
+function enterFullscreen(){
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if(!req) return;
+  try{
+    const r = req.call(el);
+    if(r && r.catch) r.catch(() => {});
+  }catch(err){ /* ignore — some webviews reject silently */ }
+}
+function exitFullscreen(){
+  const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+  if(!exit) return;
+  try{
+    const r = exit.call(document);
+    if(r && r.catch) r.catch(() => {});
+  }catch(err){ /* ignore */ }
+}
+if(fsSupported()){
+  fsBtn.addEventListener('click', () => {
+    if(fsElement()) exitFullscreen(); else enterFullscreen();
+  });
+  document.addEventListener('fullscreenchange', updateFsButton);
+  document.addEventListener('webkitfullscreenchange', updateFsButton);
+  document.addEventListener('msfullscreenchange', updateFsButton);
+  updateFsButton();
+}else{
+  // No Fullscreen API in this browser/webview — hide the control rather than show a dead button.
+  fsBtn.style.display = 'none';
+}
+</script>
+</body>
+</html>
